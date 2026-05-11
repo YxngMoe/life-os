@@ -284,7 +284,7 @@ const ip=(c)=>({width:"100%",background:"rgba(255,255,255,0.05)",border:`1px sol
 const ta=(c)=>({...ip(c),resize:"vertical",lineHeight:1.7});
 const cd=(c,ex={})=>({background:C.card,border:`1px solid ${c||C.bdr}22`,borderLeft:`3px solid ${c||C.bdr}`,borderRadius:12,padding:"13px 15px",marginBottom:8,...ex});
 const bg=(c)=>({display:"inline-block",fontSize:9,padding:"2px 7px",borderRadius:20,background:`${c}20`,color:c,fontWeight:700,letterSpacing:.5});
-const SC={home:"home",week:"week",day:"day",subjects:"subjects",subject:"subject",todo:"todo",goals:"goals",hard75:"hard75",chat:"chat"};
+const SC={home:"home",week:"week",day:"day",subjects:"subjects",subject:"subject",todo:"todo",goals:"goals",hard75:"hard75",chat:"chat",metrics:"metrics"};
 
 // ── LINK RENDER ───────────────────────────────────────────────
 function renderText(text){
@@ -435,16 +435,28 @@ function Home({nav,checks,schedule,todos,setTodos,hard75,setHard75,hard75Streak,
             </div>
           ))}
         </div>
-        {/* 75 Hard mini */}
-        <div style={cd(C.r,{marginBottom:12})}>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:7}}>
-            <div style={{fontSize:10,color:C.r,fontWeight:700}}>🔥 75 Hard — Day {hard75Streak||0}</div>
-            <button onClick={()=>nav(SC.hard75)} style={{...sb(C.r,true),padding:"2px 8px",fontSize:9}}>Full →</button>
+        {/* 75 Hard — Non-Negotiables */}
+        <div style={{...cd(C.r,{marginBottom:12})}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+            <div style={{fontSize:10,color:C.r,fontWeight:700,letterSpacing:1,textTransform:"uppercase"}}>🔥 75 Hard — Non-Negotiables</div>
+            <div style={{display:"flex",gap:6}}>
+              <span style={{fontSize:10,color:C.r,fontWeight:800}}>{h75tasks.length>0?Math.round(h75done/h75tasks.length*100):0}%</span>
+              <button onClick={()=>nav(SC.hard75)} style={{...sb(C.r,true),padding:"2px 8px",fontSize:9}}>Full →</button>
+            </div>
           </div>
-          <div style={{background:"rgba(255,255,255,0.04)",borderRadius:4,height:5,overflow:"hidden",marginBottom:6}}>
-            <div style={{height:"100%",width:`${h75tasks.length>0?Math.round(h75done/h75tasks.length*100):0}%`,background:C.r}}/>
+          <div style={{background:"rgba(255,255,255,0.04)",borderRadius:4,height:4,overflow:"hidden",marginBottom:9}}>
+            <div style={{height:"100%",width:`${h75tasks.length>0?Math.round(h75done/h75tasks.length*100):0}%`,background:C.r,transition:"width .4s"}}/>
           </div>
-          <div style={{fontSize:10,color:C.text}}>{h75done}/{h75tasks.length} today · {h75tasks.length>0?Math.round(h75done/h75tasks.length*100):0}%</div>
+          {h75tasks.map((task,i)=>(
+            <div key={i} onClick={()=>{const next={...hard75,daily:{...(hard75.daily||{}),[todayKey]:{...h75d,[i]:!h75d[i]}}};setHard75(next);}}
+              style={{display:"flex",alignItems:"center",gap:9,padding:"6px 0",borderTop:"1px solid "+C.bdr,cursor:"pointer",opacity:h75d[i]?0.45:1}}>
+              <div style={{width:14,height:14,borderRadius:3,flexShrink:0,border:"1.5px solid "+(h75d[i]?C.r:C.r+"44"),background:h75d[i]?C.r:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                {h75d[i]&&<span style={{color:C.bg,fontSize:8,fontWeight:900}}>✓</span>}
+              </div>
+              <span style={{fontSize:11,color:C.text,textDecoration:h75d[i]?"line-through":"none"}}>{task}</span>
+            </div>
+          ))}
+          <div style={{marginTop:7,fontSize:9,color:C.dim,textAlign:"right"}}>{h75done}/{h75tasks.length} complete today · Day {hard75Streak||0} of 75</div>
         </div>
         {/* Full to-do scroll */}
         {allTodos.length>0&&(
@@ -490,29 +502,60 @@ function Week({onDayClick,checks,schedule,events,setEvents}){
   const[evTime,setEvTime]=React.useState("09:00");
   const tiToday=today.getDay()===0?6:today.getDay()-1;
   const isThisWeek=getMondayOf(today).getTime()===weekStart.getTime();
+  const nowMin=today.getHours()*60+today.getMinutes();
 
-  // Day starts 5am, ends midnight = 19 hours = 1140 min
-  const DAY_START=5*60; // 5:00am in minutes
-  const DAY_END=24*60;  // midnight
-  const TOTAL_MIN=DAY_END-DAY_START;
-  const COL_H=480; // px height of each column
+  // Build a smart layout for each day:
+  // Actual blocks shown proportionally, large gaps condensed to thin dividers
+  function buildLayout(blocks){
+    if(!blocks||blocks.length===0)return[];
+    const sorted=blocks
+      .map(function(b,bi){return{...b,_origIdx:bi,sm:timeToMin(b.t),em:timeToMin(b.e)||timeToMin(b.t)+30};})
+      .filter(function(b){return b.sm>=300&&b.sm<1440;})
+      .sort(function(a,b){return a.sm-b.sm;});
+    if(sorted.length===0)return[];
+    const items=[];
+    const DAY_S=sorted[0].sm;
+    const DAY_E=sorted[sorted.length-1].em;
+    const ACTIVE=DAY_E-DAY_S;
+    // Add gap at start if first block doesn't start at 5am
+    let cursor=DAY_S;
+    for(let i=0;i<sorted.length;i++){
+      const b=sorted[i];
+      const gap=b.sm-cursor;
+      if(gap>30){items.push({type:"gap",mins:gap,label:minsToLabel(cursor)+"–"+minsToLabel(b.sm)});}
+      items.push({type:"block",...b,_bi:b._origIdx,mins:Math.max(b.em-b.sm,15)});
+      cursor=b.em;
+    }
+    // Calculate weights: gaps get 0.3px/min, blocks get full px/min
+    const TOTAL_H=720;
+    let blockMins=0,gapMins=0;
+    items.forEach(function(it){it.type==="block"?blockMins+=it.mins:gapMins+=it.mins;});
+    const GAP_PX_PER_MIN=0.25;
+    const gapPx=gapMins*GAP_PX_PER_MIN;
+    const blockPx=TOTAL_H-gapPx;
+    const pxPerBlockMin=blockMins>0?blockPx/blockMins:2;
+    items.forEach(function(it){
+      it.h=it.type==="block"?Math.max(it.mins*pxPerBlockMin,10):Math.max(it.mins*GAP_PX_PER_MIN,8);
+    });
+    return items;
+  }
 
-  function minToY(t){return Math.max(0,((t-DAY_START)/TOTAL_MIN)*COL_H);}
-  function minToH(s,e){return Math.max(8,((e-s)/TOTAL_MIN)*COL_H);}
+  function minsToLabel(m){
+    const h=Math.floor(m/60);const mm=m%60;
+    const ampm=h>=12?"pm":"am";const h12=h>12?h-12:h===0?12:h;
+    return h12+(mm>0?":"+String(mm).padStart(2,"0"):"")+ampm;
+  }
 
   function addEvent(di){
     if(!evText.trim())return;
-    const ev={id:Date.now(),text:evText.trim(),time:evTime,color:WM[di].color};
-    setEvents({...events,[di]:[...(events[di]||[]),ev]});
+    setEvents({...events,[di]:[...(events[di]||[]),{id:Date.now(),text:evText.trim(),time:evTime,color:WM[di].color}]});
     setEvText("");setAddingTo(null);
   }
 
-  // Time labels on left axis
-  const TIME_LABELS=["5AM","6AM","7AM","8AM","9AM","10AM","11AM","12PM","1PM","2PM","3PM","4PM","5PM","6PM","7PM","8PM","9PM","10PM","11PM"];
-
   return(
     <div style={{background:C.bg,minHeight:"100vh",fontFamily:FONT}}>
-      <div style={{background:C.surf,borderBottom:`1px solid ${C.bdr}`,padding:"13px 14px",position:"sticky",top:0,zIndex:20}}>
+      {/* Sticky header */}
+      <div style={{background:C.surf,borderBottom:"1px solid "+C.bdr,padding:"13px 14px",position:"sticky",top:0,zIndex:20}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:2}}>
           <button onClick={()=>setWeekStart(d=>addDays(d,-7))} style={{...sb(C.gr,true),padding:"4px 10px",fontSize:12}}>←</button>
           <div style={{flex:1,textAlign:"center"}}>
@@ -521,87 +564,81 @@ function Week({onDayClick,checks,schedule,events,setEvents}){
           </div>
           <button onClick={()=>setWeekStart(d=>addDays(d,7))} style={{...sb(C.gr,true),padding:"4px 10px",fontSize:12}}>→</button>
         </div>
-        <div style={{fontSize:9,color:C.gr,textAlign:"center"}}>Tap any day → full routine · tap + to add event</div>
+        <div style={{fontSize:9,color:C.gr,textAlign:"center"}}>Tap day → full routine · + to add event</div>
       </div>
 
-      <div style={{overflowX:"auto",paddingBottom:20}}>
-        <div style={{minWidth:520,padding:"0 4px"}}>
-          {/* Day headers + progress */}
-          <div style={{display:"grid",gridTemplateColumns:"32px repeat(7,1fr)",gap:2,padding:"8px 0 4px",position:"sticky",top:64,background:C.bg,zIndex:10}}>
-            <div/>
+      <div style={{overflowX:"auto",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
+        <div style={{minWidth:400,padding:"0 4px 80px"}}>
+          {/* Day header row */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3,padding:"8px 0 6px",position:"sticky",top:64,background:C.bg,zIndex:10}}>
             {WM.map((d,i)=>{
               const dayDate=addDays(weekStart,i);
               const isToday=isThisWeek&&i===tiToday;
-              const{done,total}=schedule[i]?(()=>{let t=0,dn=0;schedule[i].blocks.forEach((b,bi)=>b.items.forEach((_,ii)=>{t++;if(checks[`${i}-${bi}-${ii}`])dn++;}));return{done:dn,total:t};})():{done:0,total:0};
+              const dayChecks=schedule[i]?(()=>{let t=0,dn=0;schedule[i].blocks.forEach((b,bi)=>b.items.forEach((_,ii)=>{t++;if(checks[i+"-"+bi+"-"+ii])dn++;}));return{done:dn,total:t};})():{done:0,total:0};
               const dayEvs=events[i]||[];
               return(
                 <div key={i} style={{display:"flex",flexDirection:"column",gap:2}}>
-                  <div onClick={()=>onDayClick(i)} style={{background:isToday?`${d.color}18`:C.card,border:`1.5px solid ${isToday?d.color+"77":C.bdr}`,borderRadius:10,padding:"6px 3px",textAlign:"center",cursor:"pointer"}}>
+                  <div onClick={()=>onDayClick(i)} style={{background:isToday?d.color+"18":C.card,border:"1.5px solid "+(isToday?d.color+"88":C.bdr),borderRadius:10,padding:"6px 3px",textAlign:"center",cursor:"pointer",boxShadow:isToday?"0 0 16px "+d.color+"33":"none"}}>
                     <div style={{fontSize:8,color:isToday?d.color:C.gr,fontWeight:700}}>{d.short}</div>
-                    <div style={{fontSize:9,color:isToday?d.color:C.dim}}>{fmtDate(dayDate)}</div>
+                    <div style={{fontSize:8,color:isToday?d.color:C.dim}}>{fmtDate(dayDate)}</div>
                     <div style={{fontSize:14,margin:"2px 0"}}>{d.emoji}</div>
-                    {isToday&&<div style={{fontSize:7,color:d.color,fontWeight:700}}>TODAY</div>}
-                    {total>0&&<div style={{fontSize:7,color:d.color,fontWeight:600}}>{Math.round(done/total*100)}%</div>}
-                    <div style={{background:"rgba(255,255,255,0.05)",borderRadius:3,height:2.5,margin:"3px 3px 0",overflow:"hidden"}}>
-                      <div style={{height:"100%",width:`${total>0?Math.round(done/total*100):0}%`,background:d.color}}/>
+                    {isToday&&<div style={{fontSize:7,color:d.color,fontWeight:800}}>TODAY</div>}
+                    {dayChecks.total>0&&<div style={{fontSize:7,color:d.color,fontWeight:700}}>{Math.round(dayChecks.done/dayChecks.total*100)}%</div>}
+                    <div style={{background:"rgba(255,255,255,0.05)",borderRadius:2,height:2.5,margin:"2px 2px 0",overflow:"hidden"}}>
+                      <div style={{height:"100%",width:dayChecks.total>0?(Math.round(dayChecks.done/dayChecks.total*100)+"%"):"0%",background:d.color}}/>
                     </div>
                   </div>
                   {dayEvs.map(ev=>(
-                    <div key={ev.id} onClick={()=>onDayClick(i)} style={{background:`${ev.color}22`,border:`1px solid ${ev.color}55`,borderRadius:5,padding:"2px 3px",cursor:"pointer",textAlign:"center"}}>
+                    <div key={ev.id} onClick={()=>onDayClick(i)} style={{background:ev.color+"22",border:"1px solid "+ev.color+"55",borderRadius:5,padding:"2px 3px",cursor:"pointer",textAlign:"center"}}>
                       <div style={{fontSize:7,color:ev.color,fontWeight:700}}>{ev.time}</div>
                       <div style={{fontSize:7,color:C.text,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{ev.text}</div>
                     </div>
                   ))}
-                  <button onClick={e=>{e.stopPropagation();setAddingTo(i);}} style={{background:"transparent",border:`1px dashed ${d.color}44`,borderRadius:5,padding:"1px",color:d.color,fontSize:10,cursor:"pointer",fontFamily:FONT}}>+</button>
+                  <button onClick={e=>{e.stopPropagation();setAddingTo(i);}} style={{background:"transparent",border:"1px dashed "+d.color+"44",borderRadius:5,padding:"1px",color:d.color,fontSize:10,cursor:"pointer",fontFamily:FONT}}>+</button>
                 </div>
               );
             })}
           </div>
 
-          {/* Time axis + blocks */}
-          <div style={{display:"grid",gridTemplateColumns:"32px repeat(7,1fr)",gap:2}}>
-            {/* Left time axis */}
-            <div style={{position:"relative",height:COL_H}}>
-              {TIME_LABELS.map((lbl,i)=>(
-                <div key={i} style={{position:"absolute",right:3,fontSize:7,color:C.dim,transform:"translateY(-50%)",top:`${(i/19)*COL_H}px`,whiteSpace:"nowrap"}}>{lbl}</div>
-              ))}
-            </div>
-
-            {/* Day columns with actual time blocks */}
+          {/* Smart block columns — no fixed time axis */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3}}>
             {WM.map((d,di)=>{
               const isToday=isThisWeek&&di===tiToday;
-              const nowMin=isToday?today.getHours()*60+today.getMinutes():null;
-              const dayBlocks=schedule[di]?.blocks||[];
-
+              const layout=buildLayout(schedule[di]?.blocks||[]);
+              let accY=0;
               return(
-                <div key={di} onClick={()=>onDayClick(di)} style={{position:"relative",height:COL_H,background:C.card,borderRadius:8,overflow:"hidden",cursor:"pointer",border:`1px solid ${isToday?d.color+"33":C.bdr}`}}>
-                  {/* Hour grid lines */}
-                  {TIME_LABELS.map((_,i)=>(
-                    <div key={i} style={{position:"absolute",top:`${(i/19)*COL_H}px`,left:0,right:0,borderTop:`1px solid ${C.bdr}`,opacity:.4}}/>
-                  ))}
-                  {/* Schedule blocks */}
-                  {dayBlocks.map((block,bi)=>{
-                    const s=timeToMin(block.t);
-                    const e=timeToMin(block.e)||Math.min(s+60,DAY_END);
-                    if(s<DAY_START||s>=DAY_END)return null;
-                    const y=minToY(s);
-                    const h=minToH(s,Math.min(e,DAY_END));
-                    const cc=CAT[block.cat]?.c||C.gr;
-                    const bDone=block.items.filter((_,ii)=>checks[`${di}-${bi}-${ii}`]).length;
-                    const allDone=bDone===block.items.length&&block.items.length>0;
-                    const isNow=isToday&&nowMin&&nowMin>=s&&nowMin<e;
+                <div key={di} onClick={()=>onDayClick(di)} style={{background:isToday?C.card:"#070712",borderRadius:10,overflow:"hidden",cursor:"pointer",border:"1px solid "+(isToday?d.color+"44":C.bdr),minHeight:200,opacity:isToday?1:0.55,display:"flex",flexDirection:"column"}}>
+                  {layout.map((item,idx)=>{
+                    if(item.type==="gap"){
+                      return(
+                        <div key={idx} style={{height:item.h,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",borderTop:"1px dashed "+C.bdr,borderBottom:"1px dashed "+C.bdr}}>
+                          <div style={{fontSize:5.5,color:C.dim,letterSpacing:.5}}>{item.label}</div>
+                        </div>
+                      );
+                    }
+                    const cc=CAT[item.cat]?.c||C.gr;
+                    const bDone=item.items&&item._bi!==undefined?item.items.filter((_,ii)=>checks[di+"-"+item._bi+"-"+ii]).length:0;
+                    const allDone=item.items&&bDone===item.items.length&&item.items.length>0;
+                    const isNow=isToday&&nowMin>=item.sm&&nowMin<item.em;
                     return(
-                      <div key={bi} style={{position:"absolute",top:y,left:1,right:1,height:Math.max(h,8),background:`${cc}${isNow?"44":"22"}`,borderLeft:`2px solid ${cc}${isToday?"cc":"33"}`,borderRadius:3,overflow:"hidden",display:"flex",alignItems:"flex-start",padding:"1px 2px",border:isNow?`1px solid ${cc}88`:"none",boxShadow:isNow?`0 0 8px ${cc}55`:"none"}}>
-                        {h>12&&<div style={{fontSize:6,color:cc,fontWeight:700,lineHeight:1.2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>
-                          {allDone?"✓ ":""}{block.emoji} {block.title}
-                        </div>}
+                      <div key={idx} style={{height:item.h,flexShrink:0,background:isNow?cc+"44":isToday?cc+"22":cc+"0d",borderLeft:"2px solid "+(isToday?cc+(isNow?"ee":"77"):cc+"28"),borderBottom:"1px solid "+C.bdr+"88",overflow:"hidden",padding:"2px 3px",position:"relative",boxShadow:isNow?"0 0 10px "+cc+"55":"none"}}>
+                        {item.h>16&&(
+                          <div style={{fontSize:6,color:isNow?C.w:isToday?cc:cc+"66",fontWeight:700,lineHeight:1.2,overflow:"hidden"}}>
+                            {allDone?"✓ ":""}{item.emoji} {item.title}
+                          </div>
+                        )}
+                        {item.h>28&&(
+                          <div style={{fontSize:5,color:isToday?C.gr:C.dim,marginTop:1}}>{minsToLabel(item.sm)}</div>
+                        )}
+                        {isNow&&(
+                          <div style={{position:"absolute",bottom:0,left:0,right:0,height:2,background:cc,boxShadow:"0 0 6px "+cc}}/>
+                        )}
                       </div>
                     );
                   })}
-                  {/* Current time line */}
-                  {isToday&&nowMin&&nowMin>=DAY_START&&nowMin<DAY_END&&(
-                    <div style={{position:"absolute",top:minToY(nowMin),left:0,right:0,height:2,background:d.color,zIndex:5,boxShadow:`0 0 6px ${d.color}`}}>
-                      <div style={{position:"absolute",left:0,top:-3,width:7,height:7,borderRadius:"50%",background:d.color}}/>
+                  {layout.length===0&&(
+                    <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      <div style={{fontSize:8,color:C.dim}}>Rest</div>
                     </div>
                   )}
                 </div>
@@ -618,7 +655,7 @@ function Week({onDayClick,checks,schedule,events,setEvents}){
             <div style={{fontSize:14,fontWeight:700,color:WM[addingTo].color,marginBottom:14}}>Add event — {WM[addingTo].name}</div>
             <div style={{display:"flex",gap:8,marginBottom:12}}>
               <input type="time" value={evTime} onChange={e=>setEvTime(e.target.value)} style={{...ip(WM[addingTo].color),width:100,flexShrink:0}}/>
-              <input value={evText} onChange={e=>setEvText(e.target.value)} placeholder="Dentist, blood test..." style={ip(WM[addingTo].color)} autoFocus onKeyDown={e=>e.key==="Enter"&&addEvent(addingTo)}/>
+              <input value={evText} onChange={e=>setEvText(e.target.value)} placeholder="Dentist, appointment..." style={ip(WM[addingTo].color)} autoFocus onKeyDown={e=>e.key==="Enter"&&addEvent(addingTo)}/>
             </div>
             <div style={{display:"flex",gap:8}}>
               <button onClick={()=>addEvent(addingTo)} style={{...sb(WM[addingTo].color),flex:1}}>Add to Calendar</button>
@@ -631,9 +668,6 @@ function Week({onDayClick,checks,schedule,events,setEvents}){
   );
 }
 
-// ══════════════════════════════════════════
-// DAY DETAIL
-// ══════════════════════════════════════════
 function Day({dayIdx,checks,setChecks,schedule,setSchedule,nav,events,subjects}){
   const[collapsed,setCollapsed]=useStore("col_v5",{});
   const[editMode,setEditMode]=React.useState(false);
@@ -1059,6 +1093,7 @@ function SubjectPage({subjectId,nav,subjects}){
   const[nQ,setNQ]=React.useState("");const[nA,setNA]=React.useState("");
   const[wEx,setWEx]=React.useState("");const[wSets,setWSets]=React.useState("");const[wNote,setWNote]=React.useState("");
   const[fontSize,setFontSize]=React.useState(13);
+  const[tracker,setTracker]=useStore("tracker_"+subjectId,{exercises:{},selected:""});
   const DATA=isVocab?vocab:cards;
   const c=subj.color;const page=pages[pageIdx]||pages[0];
   function updContent(v){setPages(pages.map((p,i)=>i===pageIdx?{...p,content:v}:p));}
@@ -1073,7 +1108,7 @@ function SubjectPage({subjectId,nav,subjects}){
   function chkSp(){const w=vocab[si]?.word||"";const ok=spell.trim().toLowerCase()===w.toLowerCase();setSpR(ok?"✓ Correct!":"✗ Wrong — it's: "+w);}
   function delCard(id){isVocab?setVocab(vocab.filter(v=>v.id!==id)):setCards(cards.filter(c=>c.id!==id));}
 
-  const TABS=isVocab?[["notes","Notes"],["add","Add Word"],["flash","Recall"],["quiz","Quiz"],["spell","Spelling"]]:isWorkout?[["notes","Notes"],["log","Log"],["history","History"]]:[["notes","Notes"],["add","Add Q&A"],["flash","Recall"],["quiz","Quiz"]];
+  const TABS=isVocab?[["notes","Notes"],["add","Add Word"],["flash","Recall"],["quiz","Quiz"],["spell","Spelling"]]:isWorkout?[["notes","Notes"],["tracker","📊 Tracker"],["history","History"]]:[["notes","Notes"],["add","Add Q&A"],["flash","Recall"],["quiz","Quiz"]];
   const J_TPLS={"Daily Morning Journal":"🗓️ Date:\n\n1️⃣ PURPOSE REMINDER\nMy purpose right now:\n\n2️⃣ YESTERDAY — PURPOSE CHECK\nToward purpose:\nAway from purpose:\nWhat this teaches me:\n\n3️⃣ YESTERDAY STORY\nSituation:\nChoice I made:\nWhat it says about who I'm becoming:\n\n4️⃣ TODAY — PURPOSE IN ACTION\nToday moves me toward my purpose if I:\nTo-do list:\n1.\n2.\n3.\n\n5️⃣ FAITH CHECK\nOne way I'll practice submission today:\n\n6️⃣ CLOSING LINE\nToday I choose to be the kind of man who:",
     "Daily Recall":"🧬 Huberman / Neuroscience:\n📖 Book:\n💬 Communication:\n🗣️ Vocabulary:\n🕰️ History:\n☪️ Islamic Studies:\n💻 Tech / JPMC:\n💼 Business:\n🧠 Life / Discipline:\n🏋️ Training:",
     "Vocab Entry":"🗓 Word of the Day:\n\n1️⃣ Definition (Your Own Words):\n\n2️⃣ Structure:\nPrefix:\nRoot:\nSuffix:\nMeaning from parts:\n\n3️⃣ Synonyms:\n•\n•\n\n4️⃣ Work Sentence:\n\n5️⃣ Personal Sentence:\n\n6️⃣ Collocation:",
@@ -1164,20 +1199,22 @@ function SubjectPage({subjectId,nav,subjects}){
             ))}</div>
           </div>
         )}
-        {tab==="log"&&isWorkout&&(
-          <div>
-            <div style={{fontSize:9,color:c,marginBottom:3}}>Exercise</div>
-            <input value={wEx} onChange={e=>setWEx(e.target.value)} placeholder="e.g. Bench Press" style={{...ip(c),marginBottom:7}}/>
-            <div style={{fontSize:9,color:c,marginBottom:3}}>Sets / Reps / Weight</div>
-            <input value={wSets} onChange={e=>setWSets(e.target.value)} placeholder="e.g. 4x6 @ 185 lbs" style={{...ip(c),marginBottom:7}}/>
-            <div style={{fontSize:9,color:c,marginBottom:3}}>Notes</div>
-            <textarea value={wNote} onChange={e=>setWNote(e.target.value)} spellCheck={true} placeholder="Form, energy..." style={{...ta(c),marginBottom:11}} rows={2}/>
-            <button onClick={addW} style={{...sb(c),width:"100%",padding:"11px"}}>Log Exercise</button>
-          </div>
+        {tab==="tracker"&&isWorkout&&(
+          <WorkoutTracker tracker={tracker} setTracker={setTracker} color={c}/>
         )}
-        {tab==="history"&&isWorkout&&(wLogs.length===0?<div style={{textAlign:"center",padding:"50px 0",color:C.gr,fontSize:12}}>No logs yet.</div>:wLogs.map(l=>(
-          <div key={l.id} style={{...cd(c,{padding:"9px 11px",marginBottom:7})}}><div style={{display:"flex",justifyContent:"space-between"}}><div style={{fontSize:12,fontWeight:700,color:c}}>{l.ex}</div><span style={{fontSize:9,color:C.gr}}>{l.date}</span></div><div style={{fontSize:11,color:C.text,marginTop:2}}>{l.sets}</div>{l.note&&<div style={{fontSize:10,color:C.gr,marginTop:2}}>{l.note}</div>}</div>
-        )))}
+        {tab==="history"&&isWorkout&&(wLogs.length===0
+          ?<div style={{textAlign:"center",padding:"50px 0",color:C.gr,fontSize:12}}>No logs yet.</div>
+          :wLogs.map(l=>(
+            <div key={l.id} style={{...cd(c,{padding:"9px 11px",marginBottom:7})}}>
+              <div style={{display:"flex",justifyContent:"space-between"}}>
+                <div style={{fontSize:12,fontWeight:700,color:c}}>{l.ex}</div>
+                <span style={{fontSize:9,color:C.gr}}>{l.date}</span>
+              </div>
+              <div style={{fontSize:11,color:C.text,marginTop:2}}>{l.sets}</div>
+              {l.note&&<div style={{fontSize:10,color:C.gr,marginTop:2}}>{l.note}</div>}
+            </div>
+          ))
+        )}
         {tab==="flash"&&(DATA.length===0?<div style={{textAlign:"center",padding:"60px 0",color:C.gr,fontSize:12}}>No entries yet.</div>:(
           <div>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
@@ -1309,6 +1346,499 @@ function Todo({todos,setTodos}){
   );
 }
 
+
+
+// ══════════════════════════════════════════
+// WORKOUT TRACKER — spreadsheet + bar chart
+// ══════════════════════════════════════════
+function WorkoutTracker({tracker,setTracker,color}){
+  const c=color||C.g;
+  const[selEx,setSelEx]=React.useState(tracker.selected||"");
+  const[newExName,setNewExName]=React.useState("");
+  const[addingEx,setAddingEx]=React.useState(false);
+  const[newRow,setNewRow]=React.useState({date:new Date().toISOString().slice(0,10),sets:"",reps:"",weight:""});
+  const[editCell,setEditCell]=React.useState(null);
+  const[editVal,setEditVal]=React.useState("");
+  const[view,setView]=React.useState("table"); // table | chart
+
+  const exercises=tracker.exercises||{};
+  const exNames=Object.keys(exercises);
+  const rows=selEx&&exercises[selEx]?exercises[selEx]:[];
+
+  function addExercise(){
+    if(!newExName.trim())return;
+    const name=newExName.trim();
+    setTracker({...tracker,exercises:{...exercises,[name]:[]},selected:name});
+    setSelEx(name);setNewExName("");setAddingEx(false);
+  }
+
+  function addRow(){
+    if(!selEx)return;
+    const r={id:Date.now(),...newRow};
+    const updated={...exercises,[selEx]:[...rows,r]};
+    setTracker({...tracker,exercises:updated,selected:selEx});
+    setNewRow({date:new Date().toISOString().slice(0,10),sets:"",reps:"",weight:""});
+  }
+
+  function deleteRow(id){
+    const updated={...exercises,[selEx]:rows.filter(function(r){return r.id!==id;})};
+    setTracker({...tracker,exercises:updated});
+  }
+
+  function deleteExercise(name){
+    if(!window.confirm("Delete "+name+" and all its data?"))return;
+    const ex={...exercises};delete ex[name];
+    const newSel=Object.keys(ex)[0]||"";
+    setTracker({...tracker,exercises:ex,selected:newSel});
+    setSelEx(newSel);
+  }
+
+  function saveCell(rowId,field,val){
+    const updated={...exercises,[selEx]:rows.map(function(r){
+      return r.id===rowId?{...r,[field]:val}:r;
+    })};
+    setTracker({...tracker,exercises:updated});
+    setEditCell(null);
+  }
+
+  // Chart data: max weight per session date
+  const chartData=React.useMemo(function(){
+    if(!rows||rows.length===0)return[];
+    const byDate={};
+    rows.forEach(function(r){
+      const w=parseFloat(r.weight)||0;
+      const vol=(parseFloat(r.sets)||0)*(parseFloat(r.reps)||0)*w;
+      if(!byDate[r.date]||vol>byDate[r.date].vol){
+        byDate[r.date]={date:r.date,weight:w,vol:vol,sets:r.sets,reps:r.reps};
+      }
+    });
+    return Object.values(byDate).sort(function(a,b){return a.date.localeCompare(b.date);}).slice(-12);
+  },[rows]);
+
+  const maxW=chartData.reduce(function(m,d){return Math.max(m,d.weight||0);},0)||1;
+  const maxV=chartData.reduce(function(m,d){return Math.max(m,d.vol||0);},0)||1;
+
+  const COLS=["date","sets","reps","weight"];
+  const LABELS={date:"Date",sets:"Sets",reps:"Reps",weight:"Weight (lbs)"};
+
+  return(
+    <div style={{paddingBottom:20}}>
+      {/* Exercise selector */}
+      <div style={{display:"flex",gap:7,marginBottom:10,alignItems:"center",flexWrap:"wrap"}}>
+        <div style={{fontSize:9,color:C.gr,textTransform:"uppercase",letterSpacing:1,flexShrink:0}}>Exercise:</div>
+        {exNames.map(function(name){return(
+          <button key={name} onClick={function(){setSelEx(name);setTracker({...tracker,selected:name});}}
+            style={{fontSize:10,padding:"4px 10px",borderRadius:20,cursor:"pointer",fontFamily:FONT,
+              background:selEx===name?c+"25":"transparent",
+              color:selEx===name?c:C.gr,
+              border:"1.5px solid "+(selEx===name?c:C.bdr)}}>
+            {name}
+            <span onClick={function(e){e.stopPropagation();deleteExercise(name);}}
+              style={{marginLeft:5,opacity:.5,fontSize:9}}>×</span>
+          </button>
+        );})}
+        {addingEx?(
+          <div style={{display:"flex",gap:5,alignItems:"center"}}>
+            <input value={newExName} onChange={function(e){setNewExName(e.target.value);}}
+              onKeyDown={function(e){if(e.key==="Enter")addExercise();}}
+              placeholder="Exercise name..." autoFocus
+              style={{...ip(c),padding:"4px 9px",fontSize:11,width:140}}/>
+            <button onClick={addExercise} style={{...sb(c),padding:"4px 10px",fontSize:10}}>Add</button>
+            <button onClick={function(){setAddingEx(false);}} style={{...sb(c,true),padding:"4px 8px",fontSize:10}}>✕</button>
+          </div>
+        ):(
+          <button onClick={function(){setAddingEx(true);}}
+            style={{...sb(c,true),padding:"4px 10px",fontSize:10}}>+ New Exercise</button>
+        )}
+      </div>
+
+      {!selEx&&exNames.length===0&&(
+        <div style={{textAlign:"center",padding:"40px 0",color:C.gr}}>
+          <div style={{fontSize:28,marginBottom:8}}>🏋️</div>
+          <div style={{fontSize:13,marginBottom:6}}>No exercises yet</div>
+          <div style={{fontSize:11,color:C.dim}}>Tap "+ New Exercise" to create your first tracker</div>
+        </div>
+      )}
+
+      {selEx&&(
+        <>
+          {/* View toggle */}
+          <div style={{display:"flex",gap:6,marginBottom:10}}>
+            <button onClick={function(){setView("table");}}
+              style={{...sb(view==="table"?c:C.gr,view!=="table"),padding:"5px 14px",fontSize:10}}>📋 Table</button>
+            <button onClick={function(){setView("chart");}}
+              style={{...sb(view==="chart"?c:C.gr,view!=="chart"),padding:"5px 14px",fontSize:10}}>📊 Chart</button>
+          </div>
+
+          {view==="table"&&(
+            <>
+              {/* Table */}
+              <div style={{overflowX:"auto",marginBottom:10,borderRadius:10,border:"1px solid "+c+"33"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,fontFamily:FONT}}>
+                  <thead>
+                    <tr style={{background:c+"18"}}>
+                      {COLS.map(function(col){return(
+                        <th key={col} style={{padding:"7px 8px",textAlign:"left",color:c,fontWeight:700,fontSize:9,letterSpacing:.8,textTransform:"uppercase",borderBottom:"1px solid "+c+"33",whiteSpace:"nowrap"}}>{LABELS[col]}</th>
+                      );})}
+                      <th style={{padding:"7px 8px",borderBottom:"1px solid "+c+"33",width:24}}/>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map(function(row,ri){return(
+                      <tr key={row.id} style={{background:ri%2===0?C.card:C.card2,borderBottom:"1px solid "+C.bdr}}>
+                        {COLS.map(function(col){
+                          const isEditing=editCell&&editCell.id===row.id&&editCell.col===col;
+                          return(
+                            <td key={col} style={{padding:"5px 8px",color:C.text}}
+                              onClick={function(){setEditCell({id:row.id,col:col});setEditVal(row[col]||"");}}>
+                              {isEditing?(
+                                <input value={editVal} autoFocus
+                                  onChange={function(e){setEditVal(e.target.value);}}
+                                  onBlur={function(){saveCell(row.id,col,editVal);}}
+                                  onKeyDown={function(e){if(e.key==="Enter")saveCell(row.id,col,editVal);if(e.key==="Escape")setEditCell(null);}}
+                                  style={{width:"100%",background:"transparent",border:"none",borderBottom:"1px solid "+c,color:c,fontSize:11,outline:"none",fontFamily:FONT,padding:"1px 0"}}/>
+                              ):(
+                                <span style={{display:"block",minWidth:col==="date"?80:30,cursor:"text"}}>{row[col]||<span style={{color:C.dim,fontSize:9}}>—</span>}</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                        <td style={{padding:"5px 8px",textAlign:"right"}}>
+                          <button onClick={function(){deleteRow(row.id);}}
+                            style={{background:"none",border:"none",color:C.r,cursor:"pointer",fontSize:12,opacity:.6}}>×</button>
+                        </td>
+                      </tr>
+                    );})}
+                    {/* Add new row inline */}
+                    <tr style={{background:c+"08",borderTop:"2px solid "+c+"33"}}>
+                      {COLS.map(function(col){return(
+                        <td key={col} style={{padding:"5px 8px"}}>
+                          <input
+                            type={col==="date"?"date":col==="weight"?"number":"text"}
+                            value={newRow[col]}
+                            onChange={function(e){setNewRow(function(r){return{...r,[col]:e.target.value};});}}
+                            onKeyDown={function(e){if(e.key==="Enter")addRow();}}
+                            placeholder={col==="date"?"":col==="sets"?"4":col==="reps"?"6":"185"}
+                            style={{width:"100%",background:"transparent",border:"none",borderBottom:"1px solid "+c+"44",color:C.text,fontSize:11,outline:"none",fontFamily:FONT,padding:"2px 0"}}
+                          />
+                        </td>
+                      );})}
+                      <td style={{padding:"5px 8px",textAlign:"right"}}>
+                        <button onClick={addRow}
+                          style={{background:c,border:"none",borderRadius:4,color:C.bg,fontSize:11,fontWeight:700,cursor:"pointer",padding:"3px 8px",fontFamily:FONT}}>+</button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              {rows.length>0&&(
+                <div style={{fontSize:9,color:C.dim,textAlign:"right"}}>Tap any cell to edit</div>
+              )}
+            </>
+          )}
+
+          {view==="chart"&&(
+            <div>
+              {chartData.length<2?(
+                <div style={{textAlign:"center",padding:"30px 0",color:C.gr,fontSize:11}}>Add at least 2 sessions to see your progress chart.</div>
+              ):(
+                <>
+                  {/* Weight progress chart */}
+                  <div style={{marginBottom:16}}>
+                    <div style={{fontSize:10,color:c,fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:8}}>
+                      Max Weight Over Time
+                    </div>
+                    <div style={{display:"flex",alignItems:"flex-end",gap:4,height:140,padding:"0 4px"}}>
+                      {chartData.map(function(d,i){
+                        const barH=Math.max(4,Math.round((d.weight/maxW)*120));
+                        const isMax=d.weight===maxW;
+                        return(
+                          <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                            {isMax&&<div style={{fontSize:7,color:c,fontWeight:700}}>PR</div>}
+                            <div style={{width:"100%",height:barH,background:isMax?c:c+"55",borderRadius:"3px 3px 0 0",position:"relative",minHeight:4,transition:"height .3s"}}/>
+                            <div style={{fontSize:7,color:c,fontWeight:700}}>{d.weight}</div>
+                            <div style={{fontSize:6,color:C.dim,textAlign:"center",writingMode:"unset"}}>{d.date.slice(5)}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Volume chart (sets × reps × weight) */}
+                  <div style={{marginBottom:12}}>
+                    <div style={{fontSize:10,color:C.p,fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:8}}>
+                      Total Volume (sets × reps × weight)
+                    </div>
+                    <div style={{display:"flex",alignItems:"flex-end",gap:4,height:100,padding:"0 4px"}}>
+                      {chartData.map(function(d,i){
+                        const barH=Math.max(4,Math.round((d.vol/maxV)*80));
+                        return(
+                          <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                            <div style={{width:"100%",height:barH,background:C.p+"66",borderRadius:"3px 3px 0 0",minHeight:4}}/>
+                            <div style={{fontSize:6,color:C.dim}}>{d.date.slice(5)}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Stats summary */}
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+                    {[
+                      {label:"Sessions",val:rows.length,col:c},
+                      {label:"Max Weight",val:maxW+" lbs",col:C.a},
+                      {label:"Personal Record",val:chartData.filter(function(d){return d.weight===maxW;}).map(function(d){return d.date.slice(5);}).pop()||"—",col:C.g},
+                    ].map(function(s){return(
+                      <div key={s.label} style={{...cd(s.col,{padding:"9px",marginBottom:0,textAlign:"center"})}}>
+                        <div style={{fontSize:8,color:s.col,fontWeight:700,letterSpacing:.8,textTransform:"uppercase",marginBottom:3}}>{s.label}</div>
+                        <div style={{fontSize:14,color:C.w,fontWeight:800}}>{s.val}</div>
+                      </div>
+                    );})}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+
+// ══════════════════════════════════════════
+// VISION BOARD — free drag, resize, overlap
+// ══════════════════════════════════════════
+function VisionBoard({vBoard,setVBoard}){
+  const[sel,setSel]=React.useState(null);
+  const[drag,setDrag]=React.useState(null);
+  const[resize,setResize]=React.useState(null);
+  const boardRef=React.useRef(null);
+  const fileRef=React.useRef(null);
+
+  // Compress image to base64 max 700px, quality 0.65
+  function compress(file,cb){
+    const reader=new FileReader();
+    reader.onload=function(ev){
+      const img=new Image();
+      img.onload=function(){
+        const MAX=700;
+        let w=img.width,h=img.height;
+        if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+        const canvas=document.createElement("canvas");
+        canvas.width=w;canvas.height=h;
+        canvas.getContext("2d").drawImage(img,0,0,w,h);
+        cb(canvas.toDataURL("image/jpeg",0.65),w,h);
+      };
+      img.src=ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function addImages(e){
+    const files=Array.from(e.target.files||[]);
+    files.forEach(function(file,fi){
+      compress(file,function(src,iw,ih){
+        const aspect=ih/iw;
+        const w=180;const h=Math.round(w*aspect);
+        const board=boardRef.current;
+        const bw=board?board.offsetWidth:400;
+        const bh=board?board.offsetHeight:500;
+        const newItem={
+          id:Date.now()+fi,
+          src:src,
+          x:Math.round(20+Math.random()*(bw-w-40)),
+          y:Math.round(20+Math.random()*(bh-h-40)),
+          w:w,h:h,
+          z:vBoard.length+fi+1,
+          rot:Math.round((Math.random()-0.5)*12)
+        };
+        setVBoard(function(prev){return [...prev,newItem];});
+      });
+    });
+    e.target.value="";
+  }
+
+  function getXY(e){
+    if(e.touches&&e.touches.length>0)return{x:e.touches[0].clientX,y:e.touches[0].clientY};
+    return{x:e.clientX,y:e.clientY};
+  }
+
+  function onBoardMouseMove(e){
+    if(drag){
+      const{x,y}=getXY(e);
+      const dx=x-drag.sx,dy=y-drag.sy;
+      setVBoard(function(prev){return prev.map(function(it){
+        return it.id===drag.id?{...it,x:Math.max(0,drag.ox+dx),y:Math.max(0,drag.oy+dy)}:it;
+      });});
+    }
+    if(resize){
+      const{x,y}=getXY(e);
+      const dx=x-resize.sx,dy=y-resize.sy;
+      setVBoard(function(prev){return prev.map(function(it){
+        if(it.id!==resize.id)return it;
+        return{...it,w:Math.max(80,resize.ow+dx),h:Math.max(60,resize.oh+dy)};
+      });});
+    }
+  }
+
+  function onBoardMouseUp(){setDrag(null);setResize(null);}
+
+  function startDrag(e,id){
+    e.stopPropagation();e.preventDefault();
+    const{x,y}=getXY(e);
+    const it=vBoard.find(function(v){return v.id===id;});
+    if(!it)return;
+    setSel(id);
+    // Bring to front
+    const maxZ=vBoard.reduce(function(m,v){return Math.max(m,v.z||1);},1);
+    setVBoard(function(prev){return prev.map(function(v){return v.id===id?{...v,z:maxZ+1}:v;});});
+    setDrag({id,sx:x,sy:y,ox:it.x,oy:it.y});
+  }
+
+  function startResize(e,id){
+    e.stopPropagation();e.preventDefault();
+    const{x,y}=getXY(e);
+    const it=vBoard.find(function(v){return v.id===id;});
+    if(!it)return;
+    setResize({id,sx:x,sy:y,ow:it.w,oh:it.h});
+  }
+
+  function rotate(id,dir){
+    setVBoard(function(prev){return prev.map(function(it){
+      return it.id===id?{...it,rot:(it.rot||0)+dir*5}:it;
+    });});
+  }
+
+  function deleteImg(id){
+    setSel(null);
+    setVBoard(function(prev){return prev.filter(function(it){return it.id!==id;});});
+  }
+
+  function bringForward(id){
+    const maxZ=vBoard.reduce(function(m,v){return Math.max(m,v.z||1);},1);
+    setVBoard(function(prev){return prev.map(function(it){return it.id===id?{...it,z:maxZ+1}:it;});});
+  }
+
+  function sendBack(id){
+    setVBoard(function(prev){return prev.map(function(it){return it.id===id?{...it,z:0}:it;});});
+  }
+
+  return(
+    <div style={{paddingBottom:20}}>
+      {/* Toolbar */}
+      <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:10,flexWrap:"wrap"}}>
+        <button onClick={function(){fileRef.current&&fileRef.current.click();}}
+          style={{...sb(C.b),padding:"7px 16px",fontSize:12}}>
+          📁 Add Photos
+        </button>
+        <input ref={fileRef} type="file" accept="image/*" multiple onChange={addImages}
+          style={{display:"none"}}/>
+        {sel&&(
+          <>
+            <button onClick={function(){rotate(sel,-1);}} style={{...sb(C.gr,true),padding:"6px 10px",fontSize:12}}>↺</button>
+            <button onClick={function(){rotate(sel,1);}} style={{...sb(C.gr,true),padding:"6px 10px",fontSize:12}}>↻</button>
+            <button onClick={function(){bringForward(sel);}} style={{...sb(C.p,true),padding:"6px 10px",fontSize:10}}>↑ Front</button>
+            <button onClick={function(){sendBack(sel);}} style={{...sb(C.p,true),padding:"6px 10px",fontSize:10}}>↓ Back</button>
+            <button onClick={function(){deleteImg(sel);}} style={{...sb(C.r,true),padding:"6px 10px",fontSize:10}}>🗑</button>
+            <span style={{fontSize:9,color:C.gr}}>Drag to move · corner to resize</span>
+          </>
+        )}
+        {!sel&&vBoard.length===0&&(
+          <span style={{fontSize:11,color:C.gr}}>Tap "Add Photos" to pick images from your camera roll or files</span>
+        )}
+        {!sel&&vBoard.length>0&&(
+          <span style={{fontSize:9,color:C.gr}}>Tap an image to select · drag to move · drag corner to resize</span>
+        )}
+      </div>
+
+      {/* Board canvas */}
+      <div
+        ref={boardRef}
+        onClick={function(){setSel(null);}}
+        onMouseMove={onBoardMouseMove}
+        onMouseUp={onBoardMouseUp}
+        onMouseLeave={onBoardMouseUp}
+        onTouchMove={onBoardMouseMove}
+        onTouchEnd={onBoardMouseUp}
+        style={{
+          position:"relative",width:"100%",height:520,
+          background:"#08090f",
+          border:"2px dashed "+(vBoard.length===0?C.bdr:"transparent"),
+          borderRadius:16,overflow:"hidden",
+          backgroundImage:"radial-gradient(circle at 20% 30%, #0d1230 0%, transparent 60%), radial-gradient(circle at 80% 70%, #120d20 0%, transparent 60%)"
+        }}>
+        {vBoard.length===0&&(
+          <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:10}}>
+            <div style={{fontSize:40}}>🌟</div>
+            <div style={{fontSize:14,color:C.gr,fontWeight:600}}>Your Vision Board</div>
+            <div style={{fontSize:11,color:C.dim,textAlign:"center",maxWidth:220,lineHeight:1.5}}>Add photos from your files. Drag them around. Overlap them. Make it yours.</div>
+            <button onClick={function(){fileRef.current&&fileRef.current.click();}} style={{...sb(C.b),padding:"8px 20px",marginTop:8}}>📁 Add Photos</button>
+          </div>
+        )}
+        {[...vBoard].sort(function(a,b){return(a.z||1)-(b.z||1);}).map(function(it){
+          const isSel=sel===it.id;
+          return(
+            <div key={it.id}
+              onMouseDown={function(e){startDrag(e,it.id);}}
+              onTouchStart={function(e){startDrag(e,it.id);}}
+              onClick={function(e){e.stopPropagation();setSel(it.id);}}
+              style={{
+                position:"absolute",
+                left:it.x,top:it.y,
+                width:it.w,height:it.h,
+                transform:"rotate("+(it.rot||0)+"deg)",
+                zIndex:it.z||1,
+                cursor:drag&&drag.id===it.id?"grabbing":"grab",
+                boxShadow:isSel?"0 0 0 2px "+C.b+", 0 8px 32px rgba(0,0,0,0.6)":"0 4px 20px rgba(0,0,0,0.5)",
+                borderRadius:4,
+                userSelect:"none",
+                WebkitUserSelect:"none",
+                outline:"none"
+              }}>
+              <img
+                src={it.src}
+                draggable={false}
+                style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:4,display:"block",pointerEvents:"none"}}
+                alt=""
+              />
+              {/* Resize handle — bottom right corner */}
+              <div
+                onMouseDown={function(e){startResize(e,it.id);}}
+                onTouchStart={function(e){startResize(e,it.id);}}
+                style={{
+                  position:"absolute",bottom:-4,right:-4,
+                  width:14,height:14,
+                  background:isSel?C.b:C.gr,
+                  borderRadius:3,cursor:"se-resize",
+                  opacity:isSel?1:0,
+                  transition:"opacity .15s",
+                  border:"2px solid "+C.bg,
+                  zIndex:10
+                }}
+              />
+              {/* Selection indicator */}
+              {isSel&&(
+                <div style={{position:"absolute",inset:-1,borderRadius:5,border:"2px solid "+C.b,pointerEvents:"none"}}/>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {vBoard.length>0&&(
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8}}>
+          <div style={{fontSize:9,color:C.dim}}>{vBoard.length} image{vBoard.length!==1?"s":""}</div>
+          <button onClick={function(){if(window.confirm("Clear the entire vision board?")){setVBoard([]);setSel(null);}}}
+            style={{...sb(C.r,true),padding:"3px 9px",fontSize:9}}>Clear all</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
 // ══════════════════════════════════════════
 // GOALS — Vision Board first, then Goals, then Dua
 // ══════════════════════════════════════════
@@ -1316,7 +1846,7 @@ function Goals({goals,setGoals}){
   const[tab,setTab]=React.useState("vision");
   const[newG,setNewG]=React.useState("");const[cat,setCat]=React.useState("fitness");
   const[dua,setDua]=useStore("ultimate_dua","");
-  const[vBoard,setVBoard]=useStore("vboard_v1",Array(12).fill(null));
+  const[vBoard,setVBoard]=useStore("vboard_v1",[]);
   const CATS=[["fitness","💪 Fitness","#34d399"],["spiritual","🕌 Spiritual","#fbbf24"],["career","💻 Career","#a78bfa"],["business","💼 Business","#f87171"],["social","👥 Social","#60a5fa"],["personal","🧠 Personal","#f472b6"],["health","🏃 Health","#38bdf8"],["financial","💰 Financial","#34d399"]];
   const GOAL_TEMPLATE="What: \nWhy (deep reason): \nHow (3 concrete steps):\n1.\n2.\n3.\nDeadline: \nMeasure of success: ";
 
@@ -1336,27 +1866,7 @@ function Goals({goals,setGoals}){
       <div style={{padding:"13px 14px 0"}}>
         {/* VISION BOARD */}
         {tab==="vision"&&(
-          <div>
-            <div style={{fontSize:10,color:C.gr,marginBottom:12,lineHeight:1.6}}>Paste an image URL into any slot to build your vision board. 12 slots — fill them with what you're building toward.</div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
-              {vBoard.map((url,i)=>{
-                const SIZES=[{h:120},{h:80},{h:80},{h:80},{h:120},{h:80},{h:80},{h:80},{h:120},{h:80},{h:80},{h:120}];
-                return(
-                  <div key={i} onClick={()=>{const u=window.prompt("Paste image URL:");if(u)setVImg(i,u.trim());}} style={{height:SIZES[i]?.h||80,background:url?"transparent":C.card2,border:`2px dashed ${C.bdr}`,borderRadius:12,overflow:"hidden",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
-                    {url?(<>
-                      <img src={url} style={{width:"100%",height:"100%",objectFit:"cover"}} alt="" onError={()=>setVImg(i,null)}/>
-                      <button onClick={e=>{e.stopPropagation();setVImg(i,null);}} style={{position:"absolute",top:3,right:3,background:"rgba(0,0,0,0.6)",border:"none",color:C.w,borderRadius:"50%",width:18,height:18,cursor:"pointer",fontSize:10}}>×</button>
-                    </>):(
-                      <div style={{textAlign:"center"}}>
-                        <div style={{fontSize:18,marginBottom:2}}>+</div>
-                        <div style={{fontSize:8,color:C.gr}}>Add image</div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <VisionBoard vBoard={vBoard} setVBoard={setVBoard}/>
         )}
         {/* GOALS */}
         {tab==="goals"&&(<>
@@ -1624,19 +2134,472 @@ function Chat({schedule,checks,todos,goals,hard75Streak,subjects,affirmation}){
 }
 
 
+
+// ══════════════════════════════════════════
+// BODY METRICS TRACKER — weight + strength
+// ══════════════════════════════════════════
+function BodyMetrics({bodyLogs,setBodyLogs}){
+  const[tab,setTab]=React.useState("weight");
+  const[newW,setNewW]=React.useState("");
+  const[newNote,setNewNote]=React.useState("");
+  const[strLogs,setStrLogs]=useStore("strength_v1",{});
+  const[selEx,setSelEx]=React.useState("Bench Press");
+  const[newEx,setNewEx]=React.useState("");
+  const[addingEx,setAddingEx]=React.useState(false);
+  const[newRow,setNewRow]=React.useState({date:new Date().toISOString().slice(0,10),weight:"",sets:"",reps:""});
+
+  const PRESETS=["Bench Press","Deadlift","Squat","OHP","Pull-Ups","Barbell Row"];
+  const exNames=Array.from(new Set([...PRESETS,...Object.keys(strLogs)]));
+  const exRows=strLogs[selEx]||[];
+
+  // Weight chart
+  const weightData=bodyLogs.slice(-30).filter(function(l){return l.w;});
+  const maxBW=weightData.reduce(function(m,l){return Math.max(m,parseFloat(l.w)||0);},100)||100;
+  const minBW=weightData.reduce(function(m,l){return Math.min(m,parseFloat(l.w)||0);},maxBW)||100;
+  const bwRange=(maxBW-minBW)||5;
+
+  // Strength chart
+  const strData=exRows.slice(-15);
+  const maxStr=strData.reduce(function(m,r){return Math.max(m,parseFloat(r.weight)||0);},0)||1;
+
+  function addWeight(){
+    if(!newW.trim())return;
+    const entry={id:Date.now(),date:new Date().toISOString().slice(0,10),w:newW.trim(),note:newNote.trim()};
+    setBodyLogs([...bodyLogs,entry]);
+    setNewW("");setNewNote("");
+  }
+
+  function addStrRow(){
+    if(!newRow.weight)return;
+    const r={id:Date.now(),...newRow};
+    setStrLogs({...strLogs,[selEx]:[...exRows,r]});
+    setNewRow({date:new Date().toISOString().slice(0,10),weight:"",sets:"",reps:""});
+  }
+
+  function addExercise(){
+    if(!newEx.trim())return;
+    setSelEx(newEx.trim());
+    setNewEx("");setAddingEx(false);
+  }
+
+  const W=300;const H=100;
+  function bwPoint(i,total,val){
+    const x=total<2?W/2:Math.round(i*(W-20)/(total-1))+10;
+    const y=Math.round(H-10-((parseFloat(val)-minBW+bwRange*0.05)/(bwRange*1.1))*(H-20));
+    return x+","+y;
+  }
+
+  return(
+    <div style={{background:C.bg,minHeight:"100vh",fontFamily:FONT,paddingBottom:80}}>
+      <div style={{background:C.surf,borderBottom:"1px solid "+C.bdr,padding:"13px 14px"}}>
+        <div style={{fontSize:9,letterSpacing:2,textTransform:"uppercase",color:C.gr,marginBottom:3}}>Progress Tracking</div>
+        <div style={{fontSize:18,fontWeight:800,color:C.w,marginBottom:10}}>Body Metrics</div>
+        <div style={{display:"flex",gap:6}}>
+          {[["weight","⚖️ Weight"],["strength","💪 Strength"]].map(function(t){return(
+            <button key={t[0]} onClick={function(){setTab(t[0]);}}
+              style={{...sb(tab===t[0]?C.g:C.gr,tab!==t[0]),padding:"5px 14px",fontSize:10}}>{t[1]}</button>
+          );})}
+        </div>
+      </div>
+
+      <div style={{padding:"14px 14px 0"}}>
+        {tab==="weight"&&(
+          <div>
+            {/* Quick log */}
+            <div style={{background:C.card,border:"1px solid "+C.g+"33",borderRadius:12,padding:"12px 14px",marginBottom:12}}>
+              <div style={{fontSize:9,color:C.g,fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:8}}>Log Today's Weight</div>
+              <div style={{display:"flex",gap:8,marginBottom:8}}>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:9,color:C.gr,marginBottom:3}}>Weight (lbs)</div>
+                  <input type="number" value={newW} onChange={function(e){setNewW(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")addWeight();}}
+                    placeholder="142.5" style={{...ip(C.g),fontSize:16,fontWeight:700,textAlign:"center"}}/>
+                </div>
+                <div style={{flex:2}}>
+                  <div style={{fontSize:9,color:C.gr,marginBottom:3}}>Note (optional)</div>
+                  <input value={newNote} onChange={function(e){setNewNote(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")addWeight();}}
+                    placeholder="Feeling lean, post-workout..." style={ip(C.g)}/>
+                </div>
+              </div>
+              <button onClick={addWeight} style={{...sb(C.g),width:"100%",padding:"9px",fontSize:12}}>+ Log Weight</button>
+            </div>
+
+            {/* Stats row */}
+            {weightData.length>0&&(
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
+                {[
+                  {label:"Current",val:weightData[weightData.length-1].w+" lbs",c:C.g},
+                  {label:"Goal",val:"165 lbs",c:C.b},
+                  {label:"To Go",val:Math.max(0,(165-parseFloat(weightData[weightData.length-1].w||0)).toFixed(1))+" lbs",c:C.a},
+                ].map(function(s){return(
+                  <div key={s.label} style={{background:s.c+"12",border:"1px solid "+s.c+"33",borderRadius:10,padding:"9px 8px",textAlign:"center"}}>
+                    <div style={{fontSize:8,color:s.c,fontWeight:700,letterSpacing:.8,textTransform:"uppercase"}}>{s.label}</div>
+                    <div style={{fontSize:16,color:C.w,fontWeight:800,marginTop:2}}>{s.val}</div>
+                  </div>
+                );})}
+              </div>
+            )}
+
+            {/* Line chart */}
+            {weightData.length>1&&(
+              <div style={{background:C.card,borderRadius:12,padding:"12px 14px",marginBottom:12}}>
+                <div style={{fontSize:9,color:C.g,fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:8}}>
+                  Weight Trend (last {weightData.length} logs)
+                </div>
+                <svg width="100%" viewBox={"0 0 "+W+" "+H} style={{overflow:"visible"}}>
+                  <line x1="10" y1={H-10} x2={W-10} y2={H-10} stroke={C.bdr} strokeWidth="1"/>
+                  <polyline
+                    points={weightData.map(function(l,i){return bwPoint(i,weightData.length,l.w);}).join(" ")}
+                    fill="none" stroke={C.g} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  {weightData.map(function(l,i){
+                    const pt=bwPoint(i,weightData.length,l.w).split(",");
+                    return(
+                      <g key={i}>
+                        <circle cx={pt[0]} cy={pt[1]} r="3" fill={C.g}/>
+                        {i===weightData.length-1&&(
+                          <text x={pt[0]} y={parseFloat(pt[1])-7} fill={C.g} fontSize="8" textAnchor="middle" fontFamily={FONT}>{l.w}</text>
+                        )}
+                      </g>
+                    );
+                  })}
+                  <text x="10" y={H-10+10} fill={C.dim} fontSize="7" fontFamily={FONT}>{weightData[0]&&weightData[0].date.slice(5)}</text>
+                  <text x={W-10} y={H-10+10} fill={C.dim} fontSize="7" textAnchor="end" fontFamily={FONT}>{weightData[weightData.length-1]&&weightData[weightData.length-1].date.slice(5)}</text>
+                </svg>
+              </div>
+            )}
+
+            {/* Log table */}
+            {bodyLogs.length>0&&(
+              <div style={{background:C.card,borderRadius:12,overflow:"hidden",border:"1px solid "+C.g+"22"}}>
+                <div style={{maxHeight:200,overflowY:"auto"}}>
+                  <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,fontFamily:FONT}}>
+                    <thead style={{position:"sticky",top:0,background:C.card2}}>
+                      <tr>
+                        {["Date","Weight","Note",""].map(function(h){return<th key={h} style={{padding:"6px 10px",textAlign:"left",fontSize:8,color:C.gr,fontWeight:700,letterSpacing:.8,textTransform:"uppercase"}}>{h}</th>;})}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...bodyLogs].reverse().map(function(l){return(
+                        <tr key={l.id} style={{borderTop:"1px solid "+C.bdr}}>
+                          <td style={{padding:"6px 10px",color:C.gr,fontSize:10}}>{l.date}</td>
+                          <td style={{padding:"6px 10px",color:C.g,fontWeight:700}}>{l.w} lbs</td>
+                          <td style={{padding:"6px 10px",color:C.text,fontSize:10}}>{l.note||"—"}</td>
+                          <td style={{padding:"6px 10px",textAlign:"right"}}>
+                            <button onClick={function(){setBodyLogs(bodyLogs.filter(function(x){return x.id!==l.id;}));}}
+                              style={{background:"none",border:"none",color:C.r,cursor:"pointer",fontSize:11,opacity:.5}}>×</button>
+                          </td>
+                        </tr>
+                      );})}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+            {bodyLogs.length===0&&<div style={{textAlign:"center",padding:"30px 0",color:C.gr,fontSize:12}}>No weight logs yet. Log your first weigh-in above.</div>}
+          </div>
+        )}
+
+        {tab==="strength"&&(
+          <div>
+            {/* Exercise selector */}
+            <div style={{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap",alignItems:"center"}}>
+              {exNames.map(function(name){return(
+                <button key={name} onClick={function(){setSelEx(name);}}
+                  style={{fontSize:10,padding:"4px 10px",borderRadius:20,cursor:"pointer",fontFamily:FONT,
+                    background:selEx===name?C.g+"25":"transparent",
+                    color:selEx===name?C.g:C.gr,
+                    border:"1.5px solid "+(selEx===name?C.g:C.bdr)}}>
+                  {name}
+                </button>
+              );})}
+              {addingEx?(
+                <div style={{display:"flex",gap:5}}>
+                  <input value={newEx} onChange={function(e){setNewEx(e.target.value);}}
+                    onKeyDown={function(e){if(e.key==="Enter")addExercise();}}
+                    placeholder="Exercise..." autoFocus
+                    style={{...ip(C.g),padding:"4px 9px",fontSize:11,width:130}}/>
+                  <button onClick={addExercise} style={{...sb(C.g),padding:"4px 9px",fontSize:10}}>Add</button>
+                  <button onClick={function(){setAddingEx(false);}} style={{...sb(C.g,true),padding:"4px 8px",fontSize:10}}>✕</button>
+                </div>
+              ):(
+                <button onClick={function(){setAddingEx(true);}} style={{...sb(C.gr,true),padding:"4px 10px",fontSize:10}}>+ Custom</button>
+              )}
+            </div>
+
+            {/* Quick log row */}
+            <div style={{background:C.card,border:"1px solid "+C.g+"33",borderRadius:12,padding:"12px 14px",marginBottom:12}}>
+              <div style={{fontSize:9,color:C.g,fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:8}}>Log Set — {selEx}</div>
+              <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:7,marginBottom:8}}>
+                {[["date","Date","date"],["weight","Weight (lbs)","185"],["sets","Sets","4"],["reps","Reps","6"]].map(function(f){return(
+                  <div key={f[0]}>
+                    <div style={{fontSize:8,color:C.gr,marginBottom:3}}>{f[1]}</div>
+                    <input type={f[0]==="date"?"date":f[0]==="weight"?"number":"text"}
+                      value={newRow[f[0]]} onChange={function(e){var v=e.target.value;setNewRow(function(r){var n={};for(var k in r)n[k]=r[k];n[f[0]]=v;return n;});}}
+                      onKeyDown={function(e){if(e.key==="Enter")addStrRow();}}
+                      placeholder={f[2]} style={{...ip(C.g),padding:"6px 8px",fontSize:12,fontWeight:f[0]==="weight"?700:400,textAlign:f[0]==="weight"?"center":"left"}}/>
+                  </div>
+                );})}
+              </div>
+              <button onClick={addStrRow} style={{...sb(C.g),width:"100%",padding:"9px",fontSize:12}}>+ Log Set</button>
+            </div>
+
+            {/* PR stats */}
+            {exRows.length>0&&(function(){
+              var maxLift=exRows.reduce(function(m,r){return Math.max(m,parseFloat(r.weight)||0);},0);
+              var lastLift=parseFloat(exRows[exRows.length-1].weight)||0;
+              var firstLift=parseFloat(exRows[0].weight)||0;
+              var gain=firstLift>0?((maxLift-firstLift)/firstLift*100).toFixed(1):0;
+              return(
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
+                  {[
+                    {label:"Personal Record",val:maxLift+" lbs",c:C.a},
+                    {label:"Last Session",val:lastLift+" lbs",c:C.g},
+                    {label:"Total Gain",val:"+"+gain+"%",c:C.p},
+                  ].map(function(s){return(
+                    <div key={s.label} style={{background:s.c+"12",border:"1px solid "+s.c+"33",borderRadius:10,padding:"9px 8px",textAlign:"center"}}>
+                      <div style={{fontSize:7,color:s.c,fontWeight:700,letterSpacing:.8,textTransform:"uppercase",marginBottom:2}}>{s.label}</div>
+                      <div style={{fontSize:15,color:C.w,fontWeight:800}}>{s.val}</div>
+                    </div>
+                  );})}
+                </div>
+              );
+            })()}
+
+            {/* Strength bar chart */}
+            {strData.length>1&&(
+              <div style={{background:C.card,borderRadius:12,padding:"12px 14px",marginBottom:12}}>
+                <div style={{fontSize:9,color:C.g,fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:8}}>
+                  {selEx} — Weight Progress
+                </div>
+                <div style={{display:"flex",alignItems:"flex-end",gap:3,height:100}}>
+                  {strData.map(function(r,i){
+                    var w=parseFloat(r.weight)||0;
+                    var h=Math.max(6,Math.round((w/maxStr)*80));
+                    var isPR=w===maxStr;
+                    return(
+                      <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+                        {isPR&&<div style={{fontSize:7,color:C.a,fontWeight:800}}>PR</div>}
+                        <div style={{width:"100%",height:h,background:isPR?C.a:C.g+"66",borderRadius:"3px 3px 0 0",minHeight:4}}/>
+                        <div style={{fontSize:7,color:isPR?C.a:C.g,fontWeight:700}}>{w}</div>
+                        <div style={{fontSize:5,color:C.dim,textAlign:"center"}}>{r.date.slice(5)}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Volume line */}
+                {(function(){
+                  var vData=strData.filter(function(r){return r.sets&&r.reps&&r.weight;});
+                  if(vData.length<2)return null;
+                  var maxVol=vData.reduce(function(m,r){return Math.max(m,(parseFloat(r.sets)||0)*(parseFloat(r.reps)||0)*(parseFloat(r.weight)||0));},0)||1;
+                  var W2=300;var H2=50;
+                  return(
+                    <div style={{marginTop:10}}>
+                      <div style={{fontSize:8,color:C.p,fontWeight:700,letterSpacing:.8,textTransform:"uppercase",marginBottom:4}}>Volume (sets×reps×weight)</div>
+                      <svg width="100%" viewBox={"0 0 "+W2+" "+H2}>
+                        <polyline
+                          points={vData.map(function(r,i){
+                            var vol=(parseFloat(r.sets)||0)*(parseFloat(r.reps)||0)*(parseFloat(r.weight)||0);
+                            var x=vData.length<2?W2/2:Math.round(i*(W2-20)/(vData.length-1))+10;
+                            var y=Math.round(H2-5-((vol/maxVol)*(H2-10)));
+                            return x+","+y;
+                          }).join(" ")}
+                          fill="none" stroke={C.p} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* Log table */}
+            {exRows.length>0&&(
+              <div style={{background:C.card,borderRadius:12,overflow:"hidden",border:"1px solid "+C.g+"22"}}>
+                <div style={{maxHeight:180,overflowY:"auto"}}>
+                  <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,fontFamily:FONT}}>
+                    <thead style={{position:"sticky",top:0,background:C.card2}}>
+                      <tr>
+                        {["Date","lbs","Sets","Reps","Vol",""].map(function(h){return<th key={h} style={{padding:"5px 8px",textAlign:"left",fontSize:8,color:C.gr,fontWeight:700,letterSpacing:.8,textTransform:"uppercase"}}>{h}</th>;})}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...exRows].reverse().map(function(r){
+                        var vol=(parseFloat(r.sets)||0)*(parseFloat(r.reps)||0)*(parseFloat(r.weight)||0);
+                        return(
+                          <tr key={r.id} style={{borderTop:"1px solid "+C.bdr}}>
+                            <td style={{padding:"5px 8px",color:C.gr,fontSize:10}}>{r.date}</td>
+                            <td style={{padding:"5px 8px",color:C.g,fontWeight:700}}>{r.weight}</td>
+                            <td style={{padding:"5px 8px",color:C.text}}>{r.sets}</td>
+                            <td style={{padding:"5px 8px",color:C.text}}>{r.reps}</td>
+                            <td style={{padding:"5px 8px",color:C.p,fontSize:10}}>{vol>0?vol:""}</td>
+                            <td style={{padding:"5px 8px",textAlign:"right"}}>
+                              <button onClick={function(){setStrLogs(function(sl){var up={};for(var k in sl)up[k]=sl[k];up[selEx]=exRows.filter(function(x){return x.id!==r.id;});return up;});}}
+                                style={{background:"none",border:"none",color:C.r,cursor:"pointer",fontSize:11,opacity:.5}}>×</button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+            {exRows.length===0&&<div style={{textAlign:"center",padding:"30px 0",color:C.gr,fontSize:12}}>No logs for {selEx} yet.</div>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════
+// FLOATING CHAT OVERLAY
+// ══════════════════════════════════════════
+function FloatingChat({open,onClose,schedule,checks,todos,goals,hard75Streak,subjects,affirmation}){
+  const[size,setSize]=React.useState("mini");
+  const[msgs,setMsgs]=useStore("chat_hist_v1",[{r:"a",t:"Assalamu alaikum. Second brain active — what do you need?"}]);
+  const[memory,setMemory]=useStore("brain_v1","");
+  const[input,setInput]=React.useState("");
+  const[loading,setLoading]=React.useState(false);
+  const[pos,setPos]=React.useState(null);
+  const[drag,setDrag]=React.useState(null);
+  const boxRef=React.useRef(null);
+
+  React.useEffect(function(){if(boxRef.current)boxRef.current.scrollTop=boxRef.current.scrollHeight;},[msgs,loading,open]);
+
+  const ti=new Date().getDay()===0?6:new Date().getDay()-1;
+
+  function getSubjectNotes(){
+    var out="";var subs=subjects||DEFAULT_SUBS;
+    for(var i=0;i<subs.length;i++){
+      try{
+        var raw=lsGet("pgs_"+subs[i].id);if(!raw)continue;
+        var pages=JSON.parse(raw);
+        for(var j=0;j<pages.length;j++){
+          var p=pages[j];if(!p.content||p.content.length<30)continue;
+          var tmp=document.createElement("div");tmp.innerHTML=p.content;
+          var txt=(tmp.textContent||tmp.innerText||"").trim().slice(0,300);
+          if(txt.length>20)out+="\n["+subs[i].name+"] "+txt;
+        }
+      }catch(e){}
+    }
+    return out.slice(0,2000);
+  }
+
+  function buildPrompt(){
+    return "You are Mohamed's second brain. Memory:\n"+(memory||"building...")+"\n\nMohamed: 23yo Muslim Sudanese-American engineer at JPMC Philadelphia. Car living at Sporting Club 60-day discipline experiment. Goals: faith mastery, 140-165 lbs, articulate speaker, ABW franchise, SaaS. Today: "+WM[ti].name+" "+WM[ti].theme+". Be direct and specific.\n\nNotes:\n"+getSubjectNotes()+"\n\nGoals:\n"+(goals||[]).map(function(g){return g.text;}).join("\n").slice(0,500)+"\n\nTodos:\n"+((todos._all||[]).filter(function(t){return!t.done;}).map(function(t){return t.text;}).join(", ")||"none");
+  }
+
+  function send(){
+    if(!input.trim()||loading)return;
+    var txt=input.trim();setInput("");setLoading(true);
+    var next=msgs.concat([{r:"u",t:txt}]);setMsgs(next);
+    fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-api-key":CLAUDE_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:800,system:buildPrompt(),messages:next.map(function(m){return{role:m.r==="u"?"user":"assistant",content:m.t};})})
+    }).then(function(r){return r.json();}).then(function(d){
+      var reply=d.error?"Error: "+d.error.message:(d.content&&d.content[0]?d.content[0].text:"No response.");
+      var updated=next.concat([{r:"a",t:reply}]);
+      setMsgs(updated.slice(-40));setLoading(false);
+    }).catch(function(){setMsgs(function(m){return m.concat([{r:"a",t:"Connection error."}]);});setLoading(false);});
+  }
+
+  function onDragStart(e){
+    e.preventDefault();
+    var cx=e.touches?e.touches[0].clientX:e.clientX;
+    var cy=e.touches?e.touches[0].clientY:e.clientY;
+    var box=e.currentTarget.closest("[data-floatbox]");
+    if(!box)return;
+    var rect=box.getBoundingClientRect();
+    setDrag({ox:rect.left,oy:rect.top,sx:cx,sy:cy});
+  }
+
+  React.useEffect(function(){
+    if(!drag)return;
+    function onMove(e){
+      var cx=e.touches?e.touches[0].clientX:e.clientX;
+      var cy=e.touches?e.touches[0].clientY:e.clientY;
+      var nx=drag.ox+(cx-drag.sx);var ny=drag.oy+(cy-drag.sy);
+      setPos({x:Math.max(0,Math.min(nx,window.innerWidth-280)),y:Math.max(0,Math.min(ny,window.innerHeight-200))});
+    }
+    function onUp(){setDrag(null);}
+    window.addEventListener("mousemove",onMove);window.addEventListener("mouseup",onUp);
+    window.addEventListener("touchmove",onMove);window.addEventListener("touchend",onUp);
+    return function(){window.removeEventListener("mousemove",onMove);window.removeEventListener("mouseup",onUp);window.removeEventListener("touchmove",onMove);window.removeEventListener("touchend",onUp);};
+  },[drag]);
+
+  if(!open)return null;
+
+  var SIZES={
+    mini:{width:340,height:460,position:"fixed",bottom:68,right:12,top:"auto",left:"auto",zIndex:500,borderRadius:16},
+    half:{width:"50vw",height:"calc(100vh - 60px)",position:"fixed",top:60,right:0,bottom:58,left:"auto",zIndex:500,borderRadius:"16px 0 0 16px"},
+    full:{width:"100vw",height:"calc(100vh - 60px)",position:"fixed",top:60,right:0,bottom:58,left:0,zIndex:500,borderRadius:"16px 16px 0 0"},
+  };
+  var boxStyle=pos&&size==="mini"?{...SIZES.mini,left:pos.x,right:"auto",top:pos.y,bottom:"auto"}:SIZES[size]||SIZES.mini;
+
+  return(
+    <div data-floatbox="1" style={{...boxStyle,background:C.surf,border:"1px solid "+C.bdr,boxShadow:"0 8px 40px rgba(0,0,0,0.6)",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      {/* Header / drag handle */}
+      <div onMouseDown={onDragStart} onTouchStart={onDragStart}
+        style={{padding:"8px 12px",background:C.card2,borderBottom:"1px solid "+C.bdr,display:"flex",alignItems:"center",gap:8,cursor:"grab",flexShrink:0,userSelect:"none"}}>
+        <span style={{fontSize:14}}>🧠</span>
+        <div style={{flex:1,fontSize:11,fontWeight:700,color:C.w}}>Second Brain</div>
+        <div style={{display:"flex",gap:4}}>
+          {[["mini","▪"],["half","◫"],["full","⬜"]].map(function(s){return(
+            <button key={s[0]} onClick={function(){setSize(s[0]);setPos(null);}}
+              style={{background:size===s[0]?C.b+"33":"transparent",border:"none",color:size===s[0]?C.b:C.gr,fontSize:13,cursor:"pointer",borderRadius:4,padding:"1px 5px",fontFamily:FONT}}>
+              {s[1]}
+            </button>
+          );})}
+          <button onClick={onClose} style={{background:"none",border:"none",color:C.gr,fontSize:16,cursor:"pointer",marginLeft:4}}>×</button>
+        </div>
+      </div>
+      {/* Messages */}
+      <div ref={boxRef} style={{flex:1,overflowY:"auto",padding:"10px 12px",display:"flex",flexDirection:"column",gap:7}}>
+        {msgs.map(function(m,i){return(
+          <div key={i} style={{display:"flex",justifyContent:m.r==="u"?"flex-end":"flex-start"}}>
+            <div style={{maxWidth:"88%",padding:"8px 12px",borderRadius:12,fontSize:12,lineHeight:1.65,background:m.r==="u"?C.b+"18":C.card,border:"1px solid "+(m.r==="u"?C.b+"44":C.bdr),color:C.text,whiteSpace:"pre-wrap"}}>{m.t}</div>
+          </div>
+        );})}
+        {loading&&<div style={{display:"flex"}}><div style={{padding:"8px 12px",borderRadius:12,fontSize:12,background:C.card,color:C.gr,fontStyle:"italic"}}>Thinking...</div></div>}
+      </div>
+      {/* Input */}
+      <div style={{padding:"8px 10px",borderTop:"1px solid "+C.bdr,display:"flex",gap:6,flexShrink:0}}>
+        <input value={input} onChange={function(e){setInput(e.target.value);}}
+          onKeyDown={function(e){if(e.key==="Enter"&&!e.shiftKey)send();}}
+          placeholder="Ask anything..." style={{...ip(C.b),flex:1,padding:"8px 11px",fontSize:12}}/>
+        <button onClick={send} disabled={loading}
+          style={{...sb(C.b),padding:"8px 14px",opacity:loading?0.5:1,flexShrink:0,fontSize:12}}>→</button>
+      </div>
+    </div>
+  );
+}
+
+
 // ══════════════════════════════════════════
 // NAV BAR
 // ══════════════════════════════════════════
-function NavBar({screen,nav}){
-  const ITEMS=[{id:SC.home,icon:"🏠",label:"Home",c:C.b},{id:SC.week,icon:"📅",label:"Calendar",c:C.g},{id:SC.subjects,icon:"📁",label:"Subjects",c:C.p},{id:SC.todo,icon:"✅",label:"To-Do",c:C.g},{id:SC.goals,icon:"🎯",label:"Goals",c:C.a}];
-  const isA=(id)=>screen===id||(screen===SC.day&&id===SC.week)||(screen===SC.subject&&id===SC.subjects)||(screen===SC.hard75&&id===SC.home)||(screen===SC.chat&&id===SC.home);
+function NavBar({screen,nav,chatOpen,setChatOpen}){
+  const ITEMS=[
+    {id:SC.home,icon:"🏠",label:"Home",c:C.b},
+    {id:SC.week,icon:"📅",label:"Cal",c:C.g},
+    {id:SC.subjects,icon:"📁",label:"Study",c:C.p},
+    {id:SC.goals,icon:"🎯",label:"Goals",c:C.a},
+    {id:SC.metrics,icon:"📊",label:"Metrics",c:C.g},
+  ];
+  function isA(id){return screen===id||(screen===SC.day&&id===SC.week)||(screen===SC.subject&&id===SC.subjects)||(screen===SC.hard75&&id===SC.home)||(screen===SC.chat&&id===SC.home);}
   return(
-    <div style={{position:"fixed",bottom:0,left:0,right:0,background:C.surf,borderTop:`1px solid ${C.bdr}`,display:"flex",zIndex:100}}>
-      {ITEMS.map(item=>{const on=isA(item.id);return(
-        <button key={item.id} onClick={()=>nav(item.id)} style={{flex:1,background:"none",border:"none",borderTop:`2px solid ${on?item.c:"transparent"}`,padding:"9px 4px 7px",fontSize:7,cursor:"pointer",color:on?item.c:C.gr,fontFamily:FONT,display:"flex",flexDirection:"column",alignItems:"center",gap:2,letterSpacing:.3,textTransform:"uppercase"}}>
-          <span style={{fontSize:17}}>{item.icon}</span>{item.label}
+    <div style={{position:"fixed",bottom:0,left:0,right:0,background:C.surf,borderTop:"1px solid "+C.bdr,display:"flex",zIndex:100}}>
+      {ITEMS.map(function(item){var on=isA(item.id);return(
+        <button key={item.id} onClick={function(){nav(item.id);}}
+          style={{flex:1,background:"none",border:"none",borderTop:"2px solid "+(on?item.c:"transparent"),padding:"9px 2px 7px",fontSize:6.5,cursor:"pointer",color:on?item.c:C.gr,fontFamily:FONT,display:"flex",flexDirection:"column",alignItems:"center",gap:2,letterSpacing:.3,textTransform:"uppercase"}}>
+          <span style={{fontSize:16}}>{item.icon}</span>{item.label}
         </button>
       );})}
+      <button onClick={function(){setChatOpen(function(o){return !o;});}}
+        style={{flex:1,background:chatOpen?C.pk+"22":"none",border:"none",borderTop:"2px solid "+(chatOpen?C.pk:"transparent"),padding:"9px 2px 7px",fontSize:6.5,cursor:"pointer",color:chatOpen?C.pk:C.gr,fontFamily:FONT,display:"flex",flexDirection:"column",alignItems:"center",gap:2,letterSpacing:.3,textTransform:"uppercase"}}>
+        <span style={{fontSize:16}}>🧠</span>AI
+      </button>
     </div>
   );
 }
@@ -1659,6 +2622,8 @@ function App(){
   const[hard75Streak,setHard75Streak]=useStore("h75s_v5",0);
   const[affirmation,setAffirmation]=useStore("aff_v5",DEFAULT_AFF);
   const[metrics,setMetrics]=useStore("mets_v5",[{id:"water",emoji:"💧",label:"Water",value:"16 cups/day",color:C.b},{id:"streak",emoji:"🔥",label:"Streak",value:"0 days",color:C.r},{id:"weight",emoji:"⚖️",label:"Weight",value:"140→165 lbs",color:C.g}]);
+  const[bodyLogs,setBodyLogs]=useStore("body_logs_v1",[]);
+  const[chatOpen,setChatOpen]=React.useState(false);
 
   React.useEffect(function(){
     const s=lsGet("sched_v5");
@@ -1684,8 +2649,10 @@ function App(){
       {screen===SC.todo&&<Todo todos={todos} setTodos={setTodos}/>}
       {screen===SC.goals&&<Goals goals={goals} setGoals={setGoals}/>}
       {screen===SC.hard75&&<Hard75 hard75={hard75} setHard75={setHard75} hard75Streak={hard75Streak} setHard75Streak={setHard75Streak}/>}
+      {screen===SC.metrics&&<BodyMetrics bodyLogs={bodyLogs} setBodyLogs={setBodyLogs}/>}
+      <FloatingChat open={chatOpen} onClose={function(){setChatOpen(false);}} schedule={schedData||[]} checks={checks} todos={todos} goals={goals} hard75Streak={hard75Streak} subjects={subjects} affirmation={affirmation}/>
       {screen===SC.chat&&<Chat schedule={schedData} checks={checks} todos={todos} goals={goals} hard75Streak={hard75Streak} subjects={subjects} affirmation={affirmation}/>}
-      {!hideNav&&<NavBar screen={screen} nav={nav}/>}
+      {!hideNav&&<NavBar screen={screen} nav={nav} chatOpen={chatOpen} setChatOpen={setChatOpen}/>}
     </div>
   );
 }

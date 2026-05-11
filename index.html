@@ -430,7 +430,7 @@ function Home({nav,checks,schedule,todos,setTodos,hard75,setHard75,hard75Streak,
               <div style={{width:14,height:14,borderRadius:3,border:`1.5px solid ${t.done?C.g:C.g+"44"}`,background:t.done?C.g:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
                 {t.done&&<span style={{color:C.bg,fontSize:8,fontWeight:900}}>✓</span>}
               </div>
-              <span style={{fontSize:12,color:C.text,textDecoration:t.done?"line-through":"none"}}>{t.text}</span>
+              <span style={{fontSize:12,color:C.text,textDecoration:t.done?"line-through":"none"}}>{C.text}</span>
             </div>
           ))}
         </div>
@@ -451,7 +451,7 @@ function Home({nav,checks,schedule,todos,setTodos,hard75,setHard75,hard75Streak,
             <div style={{fontSize:10,color:C.gr,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>📋 Master List</div>
             <div style={{maxHeight:180,overflowY:"auto"}}>
               {allTodos.map(t=>(
-                <div key={t.id} style={{fontSize:11,color:t.done?C.gr:C.text,textDecoration:t.done?"line-through":"none",padding:"3px 0",borderBottom:`1px solid ${C.bdr}`}}>{t.text}</div>
+                <div key={t.id} style={{fontSize:11,color:t.done?C.gr:C.text,textDecoration:t.done?"line-through":"none",padding:"3px 0",borderBottom:`1px solid ${C.bdr}`}}>{C.text}</div>
               ))}
             </div>
           </div>
@@ -1014,19 +1014,19 @@ function RichEditor({content,onChange,color,fontSize,placeholder}){
 
   return(
     React.createElement("div",{style:{flex:1,display:"flex",flexDirection:"column",minHeight:0}},
-      React.createElement("div",{style:{background:T.card2,border:`1px solid ${color}22`,borderRadius:"10px 10px 0 0",padding:"6px 8px",display:"flex",gap:3,flexWrap:"wrap",alignItems:"center",flexShrink:0}},
-        ...TOOLS.map((t,i)=>React.createElement("button",{key:i,title:t.title,onClick:()=>t.a?t.a():exec(t.cmd),style:{background:"none",border:`1px solid ${T.border}`,borderRadius:5,padding:"3px 7px",fontSize:11,color:T.text,cursor:"pointer",fontWeight:t.fw||400,fontStyle:t.fi||"normal",minWidth:24}},t.l)),
-        React.createElement("div",{style:{width:1,height:18,background:T.border,margin:"0 2px"}}),
+      React.createElement("div",{style:{background:C.card2,border:`1px solid ${color}22`,borderRadius:"10px 10px 0 0",padding:"6px 8px",display:"flex",gap:3,flexWrap:"wrap",alignItems:"center",flexShrink:0}},
+        ...TOOLS.map((t,i)=>React.createElement("button",{key:i,title:t.title,onClick:()=>t.a?t.a():exec(t.cmd),style:{background:"none",border:`1px solid ${C.border}`,borderRadius:5,padding:"3px 7px",fontSize:11,color:C.text,cursor:"pointer",fontWeight:t.fw||400,fontStyle:t.fi||"normal",minWidth:24}},t.l)),
+        React.createElement("div",{style:{width:1,height:18,background:C.border,margin:"0 2px"}}),
         ...COLORS.map(col=>React.createElement("div",{key:col,onClick:()=>exec("foreColor",col),style:{width:14,height:14,borderRadius:2,background:col,cursor:"pointer",border:"1px solid rgba(255,255,255,0.15)",flexShrink:0}})),
-        React.createElement("div",{style:{width:1,height:18,background:T.border,margin:"0 2px"}}),
-        React.createElement("select",{onChange:e=>exec("fontSize",e.target.value),defaultValue:"",style:{background:T.card2,border:`1px solid ${T.border}`,borderRadius:5,padding:"2px 5px",fontSize:10,color:T.text,cursor:"pointer"}},
+        React.createElement("div",{style:{width:1,height:18,background:C.border,margin:"0 2px"}}),
+        React.createElement("select",{onChange:e=>exec("fontSize",e.target.value),defaultValue:"",style:{background:C.card2,border:`1px solid ${C.border}`,borderRadius:5,padding:"2px 5px",fontSize:10,color:C.text,cursor:"pointer"}},
           React.createElement("option",{value:"",disabled:true},"Size"),
           ...FSIZES.map(([v,l])=>React.createElement("option",{key:v,value:v},l))
         ),
         React.createElement("button",{onClick:fixGrammar,title:"Fix grammar with AI",style:{background:`${color}15`,border:`1px solid ${color}44`,borderRadius:5,padding:"3px 8px",fontSize:9,color:color,cursor:"pointer",fontWeight:700,marginLeft:4}},"✓ Fix"),
         React.createElement("button",{onClick:rewrite,title:"Rewrite with AI",style:{background:`${T.purple}15`,border:`1px solid ${T.purple}44`,borderRadius:5,padding:"3px 8px",fontSize:9,color:T.purple,cursor:"pointer",fontWeight:700}},"✨ Rewrite"),
       ),
-      showLink&&React.createElement("div",{style:{background:T.card,border:`1px solid ${color}33`,padding:"8px 10px",display:"flex",gap:6,alignItems:"center",flexShrink:0}},
+      showLink&&React.createElement("div",{style:{background:C.card,border:`1px solid ${color}33`,padding:"8px 10px",display:"flex",gap:6,alignItems:"center",flexShrink:0}},
         React.createElement("input",{value:linkText,onChange:e=>setLinkText(e.target.value),placeholder:"Link text...",style:{...ip(color),flex:1,padding:"4px 8px",fontSize:11}}),
         React.createElement("input",{value:linkUrl,onChange:e=>setLinkUrl(e.target.value),placeholder:"https://...",style:{...ip(color),flex:2,padding:"4px 8px",fontSize:11}}),
         React.createElement("button",{onClick:insertLink,style:{...sb(color),padding:"4px 10px",fontSize:11}},"Insert"),
@@ -1035,7 +1035,7 @@ function RichEditor({content,onChange,color,fontSize,placeholder}){
       React.createElement("div",{ref:edRef,contentEditable:true,suppressContentEditableWarning:true,spellCheck:true,
         onInput:syncContent,onBlur:syncContent,
         "data-placeholder":placeholder,
-        style:{flex:1,background:T.card,border:`1px solid ${color}33`,borderTop:"none",borderRadius:"0 0 10px 10px",color:T.text,fontSize:fontSize,lineHeight:1.75,padding:"12px 14px",outline:"none",overflowY:"auto",minHeight:280,wordBreak:"break-word"}}),
+        style:{flex:1,background:C.card,border:`1px solid ${color}33`,borderTop:"none",borderRadius:"0 0 10px 10px",color:C.text,fontSize:fontSize,lineHeight:1.75,padding:"12px 14px",outline:"none",overflowY:"auto",minHeight:280,wordBreak:"break-word"}}),
       React.createElement("style",null,`[contenteditable][data-placeholder]:empty:before{content:attr(data-placeholder);color:${T.muted};pointer-events:none;display:block;font-style:italic;}[contenteditable] h2{font-size:22px;font-weight:800;color:${color};margin:12px 0 4px;}[contenteditable] h3{font-size:17px;font-weight:700;color:${color};margin:8px 0 3px;}[contenteditable] a{color:${color};text-decoration:underline;}`),
     )
   );
@@ -1291,7 +1291,7 @@ function Todo({todos,setTodos}){
           {showList.length===0?<div style={{color:C.gr,fontSize:12,fontStyle:"italic",textAlign:"center",padding:"30px 0"}}>No tasks here.</div>:showList.map(t=>(
             <div key={t.id} style={{display:"flex",alignItems:"center",gap:9,padding:"9px 12px",background:C.card,border:`1px solid ${C.bdr}`,borderRadius:10,marginBottom:7,opacity:t.done?.45:1}}>
               <button onClick={()=>toggle(t.id,tab==="day")} style={{width:16,height:16,borderRadius:4,flexShrink:0,border:`1.5px solid ${t.done?C.g:C.dim}`,background:t.done?C.g:"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{t.done&&<span style={{color:C.bg,fontSize:10,fontWeight:900}}>✓</span>}</button>
-              <span style={{flex:1,fontSize:12,color:C.text,textDecoration:t.done?"line-through":"none"}}>{t.text}</span>
+              <span style={{flex:1,fontSize:12,color:C.text,textDecoration:t.done?"line-through":"none"}}>{C.text}</span>
               {tab==="all"&&<button onClick={()=>copyToDay(t)} style={{...sb(C.gr,true),padding:"2px 7px",fontSize:9,flexShrink:0}}>→{selDay.slice(0,3)}</button>}
               <button onClick={()=>del(t.id,tab==="day")} style={{background:"none",border:"none",color:C.r,cursor:"pointer",fontSize:14,opacity:.6}}>×</button>
             </div>
@@ -1494,7 +1494,7 @@ About Mohamed: 23yo Muslim Sudanese-American software/data engineer at JPMC, Phi
           messages:apiMsgs})});
       const d=await res.json();
       const t=(d.content||[]).find(b=>b.type==="text");
-      setMsgs(m=>[...m,{r:"a",t:t?t.text:"Connection error, try again."}]);
+      setMsgs(m=>[...m,{r:"a",t:t?C.text:"Connection error, try again."}]);
     }catch(e){setMsgs(m=>[...m,{r:"a",t:"Connection error — try again."}]);}
     setLoading(false);
   }

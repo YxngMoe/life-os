@@ -1469,7 +1469,7 @@ function Hard75({hard75,setHard75,hard75Streak,setHard75Streak}){
 function Chat({schedule,checks,todos,goals,hard75Streak}){
   const[msgs,setMsgs]=React.useState([{r:"a",t:"I'm your Life OS assistant. I know your full schedule, goals, 75 Hard streak, and everything in this app. Ask me anything — edit schedule suggestions, Islamic study help, LeetCode problems, business strategy, vocab words, motivation. What do you need?"}]);
   const[input,setInput]=React.useState("");const[loading,setLoading]=React.useState(false);
-  const[apiKey,setApiKey]=useStore("claude_api_key","");
+  const[apiKey,setApiKey]=useStore("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","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");
   const[keyInput,setKeyInput]=React.useState("");
   const boxRef=React.useRef(null);
   React.useEffect(()=>{if(boxRef.current)boxRef.current.scrollTop=boxRef.current.scrollHeight;},[msgs,loading]);

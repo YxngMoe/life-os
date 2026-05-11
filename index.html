@@ -991,7 +991,7 @@ function RichEditor({content,onChange,color,fontSize,placeholder}){
     if(!key){alert("Set up AI key in the Chat tab first.");return;}
     fetch("https://api.anthropic.com/v1/messages",{method:"POST",
       headers:{"Content-Type":"application/json","x-api-key":key||CLAUDE_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,messages:[{role:"user",content:"Rewrite this text to be clearer, more articulate, and better structured. Keep the same meaning and voice. Return ONLY the rewritten text:\n\n"+txt}]})
+      body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:3000,messages:[{role:"user",content:"Rewrite this text to be clearer, more articulate, and better structured. Keep the same meaning and voice. Return ONLY the rewritten text:\n\n"+txt}]})
     }).then(r=>r.json()).then(d=>{
       const f=(d.content||[]).find(b=>b.type==="text");
       if(f&&edRef.current){edRef.current.innerText=f.text;syncContent();}

@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="theme-color" content="#05070e"/>
-<title>Mohamed — Life OS</title>
+<title>Lyfe</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -430,7 +430,7 @@ function Home({nav,checks,schedule,todos,setTodos,hard75,setHard75,hard75Streak,
               <div style={{width:14,height:14,borderRadius:3,border:`1.5px solid ${t.done?C.g:C.g+"44"}`,background:t.done?C.g:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
                 {t.done&&<span style={{color:C.bg,fontSize:8,fontWeight:900}}>✓</span>}
               </div>
-              <span style={{fontSize:12,color:C.text,textDecoration:t.done?"line-through":"none"}}>{C.text}</span>
+              <span style={{fontSize:12,color:C.text,textDecoration:t.done?"line-through":"none"}}>{t.text}</span>
             </div>
           ))}
         </div>
@@ -451,7 +451,7 @@ function Home({nav,checks,schedule,todos,setTodos,hard75,setHard75,hard75Streak,
             <div style={{fontSize:10,color:C.gr,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>📋 Master List</div>
             <div style={{maxHeight:180,overflowY:"auto"}}>
               {allTodos.map(t=>(
-                <div key={t.id} style={{fontSize:11,color:t.done?C.gr:C.text,textDecoration:t.done?"line-through":"none",padding:"3px 0",borderBottom:`1px solid ${C.bdr}`}}>{C.text}</div>
+                <div key={t.id} style={{fontSize:11,color:t.done?C.gr:C.text,textDecoration:t.done?"line-through":"none",padding:"3px 0",borderBottom:`1px solid ${C.bdr}`}}>{t.text}</div>
               ))}
             </div>
           </div>
@@ -974,7 +974,7 @@ function RichEditor({content,onChange,color,fontSize,placeholder}){
   }
   function fixGrammar(){
     const txt=edRef.current?.innerText||"";if(!txt.trim())return;
-    const key=window.__claudeKey||"";
+    const key=window.__claudeKey||apiKey||"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";
     if(!key){alert("Set up AI key in the Chat tab first.");return;}
     fetch("https://api.anthropic.com/v1/messages",{method:"POST",
       headers:{"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
@@ -986,7 +986,7 @@ function RichEditor({content,onChange,color,fontSize,placeholder}){
   }
   function rewrite(){
     const txt=edRef.current?.innerText||"";if(!txt.trim())return;
-    const key=window.__claudeKey||"";
+    const key=window.__claudeKey||apiKey||"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";
     if(!key){alert("Set up AI key in the Chat tab first.");return;}
     fetch("https://api.anthropic.com/v1/messages",{method:"POST",
       headers:{"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
@@ -1015,16 +1015,16 @@ function RichEditor({content,onChange,color,fontSize,placeholder}){
   return(
     React.createElement("div",{style:{flex:1,display:"flex",flexDirection:"column",minHeight:0}},
       React.createElement("div",{style:{background:C.card2,border:`1px solid ${color}22`,borderRadius:"10px 10px 0 0",padding:"6px 8px",display:"flex",gap:3,flexWrap:"wrap",alignItems:"center",flexShrink:0}},
-        ...TOOLS.map((t,i)=>React.createElement("button",{key:i,title:t.title,onClick:()=>t.a?t.a():exec(t.cmd),style:{background:"none",border:`1px solid ${C.border}`,borderRadius:5,padding:"3px 7px",fontSize:11,color:C.text,cursor:"pointer",fontWeight:t.fw||400,fontStyle:t.fi||"normal",minWidth:24}},t.l)),
-        React.createElement("div",{style:{width:1,height:18,background:C.border,margin:"0 2px"}}),
+        ...TOOLS.map((t,i)=>React.createElement("button",{key:i,title:t.title,onClick:()=>t.a?t.a():exec(t.cmd),style:{background:"none",border:`1px solid ${C.bdr}`,borderRadius:5,padding:"3px 7px",fontSize:11,color:C.text,cursor:"pointer",fontWeight:t.fw||400,fontStyle:t.fi||"normal",minWidth:24}},t.l)),
+        React.createElement("div",{style:{width:1,height:18,background:C.bdr,margin:"0 2px"}}),
         ...COLORS.map(col=>React.createElement("div",{key:col,onClick:()=>exec("foreColor",col),style:{width:14,height:14,borderRadius:2,background:col,cursor:"pointer",border:"1px solid rgba(255,255,255,0.15)",flexShrink:0}})),
-        React.createElement("div",{style:{width:1,height:18,background:C.border,margin:"0 2px"}}),
-        React.createElement("select",{onChange:e=>exec("fontSize",e.target.value),defaultValue:"",style:{background:C.card2,border:`1px solid ${C.border}`,borderRadius:5,padding:"2px 5px",fontSize:10,color:C.text,cursor:"pointer"}},
+        React.createElement("div",{style:{width:1,height:18,background:C.bdr,margin:"0 2px"}}),
+        React.createElement("select",{onChange:e=>exec("fontSize",e.target.value),defaultValue:"",style:{background:C.card2,border:`1px solid ${C.bdr}`,borderRadius:5,padding:"2px 5px",fontSize:10,color:C.text,cursor:"pointer"}},
           React.createElement("option",{value:"",disabled:true},"Size"),
           ...FSIZES.map(([v,l])=>React.createElement("option",{key:v,value:v},l))
         ),
         React.createElement("button",{onClick:fixGrammar,title:"Fix grammar with AI",style:{background:`${color}15`,border:`1px solid ${color}44`,borderRadius:5,padding:"3px 8px",fontSize:9,color:color,cursor:"pointer",fontWeight:700,marginLeft:4}},"✓ Fix"),
-        React.createElement("button",{onClick:rewrite,title:"Rewrite with AI",style:{background:`${T.purple}15`,border:`1px solid ${T.purple}44`,borderRadius:5,padding:"3px 8px",fontSize:9,color:T.purple,cursor:"pointer",fontWeight:700}},"✨ Rewrite"),
+        React.createElement("button",{onClick:rewrite,title:"Rewrite with AI",style:{background:`${C.p}15`,border:`1px solid ${C.p}44`,borderRadius:5,padding:"3px 8px",fontSize:9,color:C.p,cursor:"pointer",fontWeight:700}},"✨ Rewrite"),
       ),
       showLink&&React.createElement("div",{style:{background:C.card,border:`1px solid ${color}33`,padding:"8px 10px",display:"flex",gap:6,alignItems:"center",flexShrink:0}},
         React.createElement("input",{value:linkText,onChange:e=>setLinkText(e.target.value),placeholder:"Link text...",style:{...ip(color),flex:1,padding:"4px 8px",fontSize:11}}),
@@ -1036,7 +1036,7 @@ function RichEditor({content,onChange,color,fontSize,placeholder}){
         onInput:syncContent,onBlur:syncContent,
         "data-placeholder":placeholder,
         style:{flex:1,background:C.card,border:`1px solid ${color}33`,borderTop:"none",borderRadius:"0 0 10px 10px",color:C.text,fontSize:fontSize,lineHeight:1.75,padding:"12px 14px",outline:"none",overflowY:"auto",minHeight:280,wordBreak:"break-word"}}),
-      React.createElement("style",null,`[contenteditable][data-placeholder]:empty:before{content:attr(data-placeholder);color:${T.muted};pointer-events:none;display:block;font-style:italic;}[contenteditable] h2{font-size:22px;font-weight:800;color:${color};margin:12px 0 4px;}[contenteditable] h3{font-size:17px;font-weight:700;color:${color};margin:8px 0 3px;}[contenteditable] a{color:${color};text-decoration:underline;}`),
+      React.createElement("style",null,`[contenteditable][data-placeholder]:empty:before{content:attr(data-placeholder);color:${C.gr};pointer-events:none;display:block;font-style:italic;}[contenteditable] h2{font-size:22px;font-weight:800;color:${color};margin:12px 0 4px;}[contenteditable] h3{font-size:17px;font-weight:700;color:${color};margin:8px 0 3px;}[contenteditable] a{color:${color};text-decoration:underline;}`),
     )
   );
 }
@@ -1291,7 +1291,7 @@ function Todo({todos,setTodos}){
           {showList.length===0?<div style={{color:C.gr,fontSize:12,fontStyle:"italic",textAlign:"center",padding:"30px 0"}}>No tasks here.</div>:showList.map(t=>(
             <div key={t.id} style={{display:"flex",alignItems:"center",gap:9,padding:"9px 12px",background:C.card,border:`1px solid ${C.bdr}`,borderRadius:10,marginBottom:7,opacity:t.done?.45:1}}>
               <button onClick={()=>toggle(t.id,tab==="day")} style={{width:16,height:16,borderRadius:4,flexShrink:0,border:`1.5px solid ${t.done?C.g:C.dim}`,background:t.done?C.g:"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{t.done&&<span style={{color:C.bg,fontSize:10,fontWeight:900}}>✓</span>}</button>
-              <span style={{flex:1,fontSize:12,color:C.text,textDecoration:t.done?"line-through":"none"}}>{C.text}</span>
+              <span style={{flex:1,fontSize:12,color:C.text,textDecoration:t.done?"line-through":"none"}}>{t.text}</span>
               {tab==="all"&&<button onClick={()=>copyToDay(t)} style={{...sb(C.gr,true),padding:"2px 7px",fontSize:9,flexShrink:0}}>→{selDay.slice(0,3)}</button>}
               <button onClick={()=>del(t.id,tab==="day")} style={{background:"none",border:"none",color:C.r,cursor:"pointer",fontSize:14,opacity:.6}}>×</button>
             </div>
@@ -1469,7 +1469,7 @@ function Hard75({hard75,setHard75,hard75Streak,setHard75Streak}){
 function Chat({schedule,checks,todos,goals,hard75Streak}){
   const[msgs,setMsgs]=React.useState([{r:"a",t:"I'm your Life OS assistant. I know your full schedule, goals, 75 Hard streak, and everything in this app. Ask me anything — edit schedule suggestions, Islamic study help, LeetCode problems, business strategy, vocab words, motivation. What do you need?"}]);
   const[input,setInput]=React.useState("");const[loading,setLoading]=React.useState(false);
-  const[apiKey,setApiKey]=useStore("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","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");
+  const[apiKey,setApiKey]=useStore("claude_api_key","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");
   const[keyInput,setKeyInput]=React.useState("");
   const boxRef=React.useRef(null);
   React.useEffect(()=>{if(boxRef.current)boxRef.current.scrollTop=boxRef.current.scrollHeight;},[msgs,loading]);
@@ -1482,7 +1482,7 @@ function Chat({schedule,checks,todos,goals,hard75Streak}){
     const next=[...msgs,{r:"u",t:txt}];setMsgs(next);
     const apiMsgs=next.filter((m,i)=>i>0||m.r!=="a").map(m=>({role:m.r==="u"?"user":"assistant",content:m.t}));
     try{
-      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey||"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","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
         body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,
           system:`You are Mohamed's personal Life OS AI assistant. You have access to his current status:
 - Today: ${WM[ti].name} — ${WM[ti].theme}
@@ -1494,7 +1494,7 @@ About Mohamed: 23yo Muslim Sudanese-American software/data engineer at JPMC, Phi
           messages:apiMsgs})});
       const d=await res.json();
       const t=(d.content||[]).find(b=>b.type==="text");
-      setMsgs(m=>[...m,{r:"a",t:t?C.text:"Connection error, try again."}]);
+      setMsgs(m=>[...m,{r:"a",t:t?t.text:"Connection error, try again."}]);
     }catch(e){setMsgs(m=>[...m,{r:"a",t:"Connection error — try again."}]);}
     setLoading(false);
   }
@@ -1588,7 +1588,7 @@ function App(){
   if(!auth)return <Lock onOk={()=>setAuth(true)}/>;
   if(!schedData)return<div style={{background:C.bg,minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:C.w,fontFamily:FONT,fontSize:13}}>Loading your Life OS...</div>;
 
-  const hideNav=screen===SC.subject||screen===SC.chat;
+  const hideNav=screen===SC.subject;
   return(
     <div style={{background:C.bg,minHeight:"100vh",paddingBottom:hideNav?0:58}}>
       {screen===SC.home&&<Home nav={nav} checks={checks} schedule={schedData} todos={todos} setTodos={setTodos} hard75={hard75} setHard75={setHard75} hard75Streak={hard75Streak} setHard75Streak={setHard75Streak} affirmation={affirmation} setAffirmation={setAffirmation} metrics={metrics} setMetrics={setMetrics}/>}

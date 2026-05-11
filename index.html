@@ -1467,79 +1467,162 @@ function Hard75({hard75,setHard75,hard75Streak,setHard75Streak}){
 // ══════════════════════════════════════════
 // AI CHAT
 // ══════════════════════════════════════════
-function Chat({schedule,checks,todos,goals,hard75Streak}){
-  const[msgs,setMsgs]=React.useState([{r:"a",t:"I'm your Life OS assistant. I know your full schedule, goals, 75 Hard streak, and everything in this app. Ask me anything — edit schedule suggestions, Islamic study help, LeetCode problems, business strategy, vocab words, motivation. What do you need?"}]);
-  const[input,setInput]=React.useState("");const[loading,setLoading]=React.useState(false);
-  const[apiKey,setApiKey]=useStore("claude_api_key_v2","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");
-  const[keyInput,setKeyInput]=React.useState("");
+function Chat({schedule,checks,todos,goals,hard75Streak,subjects,affirmation}){
+  const[msgs,setMsgs]=useStore("chat_hist_v1",[{r:"a",t:"Assalamu alaikum Mohamed. I'm your second brain — I have your full schedule, notes, goals, and a growing memory of everything you tell me. What do you need?"}]);
+  const[memory,setMemory]=useStore("brain_v1","");
+  const[input,setInput]=React.useState("");
+  const[loading,setLoading]=React.useState(false);
+  const[showMem,setShowMem]=React.useState(false);
+  const[savingMem,setSavingMem]=React.useState(false);
   const boxRef=React.useRef(null);
   React.useEffect(()=>{if(boxRef.current)boxRef.current.scrollTop=boxRef.current.scrollHeight;},[msgs,loading]);
-  const ti=new Date().getDay()===0?6:new Date().getDay()-1;
-  const{done,total}=schedule[ti]?(()=>{let t=0,d=0;schedule[ti].blocks.forEach((b,bi)=>b.items.forEach((_,ii)=>{t++;if(checks[`${ti}-${bi}-${ii}`])d++;}));return{done:d,total:t};})():{done:0,total:0};
-  const QUICK=["Give me today's Islamic study topic","Help with a LeetCode pattern","Word of the day with root breakdown","I need motivation right now","How to improve my voice + lisp?","Best way to study for AWS?","What should I eat post-workout?","How am I doing today?"];
-  async function send(){
-    if(!input.trim()||loading)return;
-    const txt=input.trim();setInput("");setLoading(true);
-    const next=[...msgs,{r:"u",t:txt}];setMsgs(next);
-    const apiMsgs=next.filter((m,i)=>i>0||m.r!=="a").map(m=>({role:m.r==="u"?"user":"assistant",content:m.t}));
-    try{
-      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey||CLAUDE_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-        body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:1000,
-          system:`You are Mohamed's personal Life OS AI assistant. You have access to his current status:
-- Today: ${WM[ti].name} — ${WM[ti].theme}
-- Routine completion today: ${done}/${total} steps (${total>0?Math.round(done/total*100):0}%)
-- 75 Hard streak: ${hard75Streak||0} days
-- Pending tasks: ${(todos._all||[]).filter(t=>!t.done).length} items on master list
 
-About Mohamed: 23yo Muslim Sudanese-American software/data engineer at JPMC, Philadelphia. Living in car at Sporting Club during 60-day discipline experiment. Goals: articulate speaker (Obama-level), master Arabic + Islamic knowledge (Quran, Hadith, Seerah, Aqeedah), grow to 165 lbs lean from 140, build ABW franchise + SaaS. Daily schedule: 5am wake/mosque/car voice routine, 6am Sporting Club, lifting + basketball warmup, recovery, JPMC work 10am-12:45pm, studies 2-5:30pm, evening athletics (boxing+golf or basketball+pickleball), cold plunge, recall recording, Isha, sleep 11:30pm. Studying: Islam, Arabic, history, finance, AI/tech, vocabulary (root-based). Derma rolling Tue/Thu/Sat/Sun. Voice routine: lip trills, tongue exercises, scripts, singing from Nuha's playlist. 16 cups water daily. Halal only. Be direct, specific, knowledgeable. You know everything about him.`,
-          messages:apiMsgs})});
-      const d=await res.json();
-      if(d.error){setMsgs(m=>[...m,{r:"a",t:"API Error: "+d.error.message}]);setLoading(false);return;}
-      const t=(d.content||[]).find(b=>b.type==="text");
-      setMsgs(m=>[...m,{r:"a",t:t?t.text:"No response — try again."}]);
-    }catch(e){setMsgs(m=>[...m,{r:"a",t:"Connection error — try again."}]);}
-    setLoading(false);
+  const ti=new Date().getDay()===0?6:new Date().getDay()-1;
+  const dayDone=React.useMemo(()=>{
+    if(!schedule[ti])return{done:0,total:0};
+    let t=0,d=0;
+    schedule[ti].blocks.forEach(function(b,bi){b.items.forEach(function(_,ii){t++;if(checks[ti+"-"+bi+"-"+ii])d++;});});
+    return{done:d,total:t};
+  },[schedule,checks,ti]);
+
+  function getSubjectNotes(){
+    var out="";
+    var subs=subjects||DEFAULT_SUBS;
+    for(var i=0;i<subs.length;i++){
+      try{
+        var raw=lsGet("pgs_"+subs[i].id);
+        if(!raw)continue;
+        var pages=JSON.parse(raw);
+        for(var j=0;j<pages.length;j++){
+          var p=pages[j];
+          if(!p.content||p.content.length<30)continue;
+          var tmp=document.createElement("div");tmp.innerHTML=p.content;var txt=(tmp.textContent||tmp.innerText||"").trim().slice(0,400);
+          if(txt.length>20)out+="\n["+subs[i].name+(pages.length>1?" / "+p.name:"")+"] "+txt;
+        }
+      }catch(e){}
+    }
+    return out.slice(0,3000);
   }
-  if(!apiKey||apiKey.length<20)return(
-    <div style={{background:C.bg,flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,height:"100vh",fontFamily:FONT}}>
-      <div style={{fontSize:44,marginBottom:16}}>🤖</div>
-      <div style={{fontSize:20,fontWeight:800,color:C.w,marginBottom:8}}>AI Chat Setup</div>
-      <div style={{fontSize:12,color:C.gr,marginBottom:24,textAlign:"center",lineHeight:1.6,maxWidth:320}}>Enter your Anthropic API key to enable chat. Get one free at console.anthropic.com</div>
-      <input value={keyInput} onChange={e=>setKeyInput(e.target.value)} placeholder="sk-ant-api03-..." style={{width:"100%",maxWidth:360,background:"rgba(255,255,255,0.06)",border:`2px solid ${C.pk}55`,borderRadius:10,color:C.w,fontSize:13,padding:"11px 14px",outline:"none",textAlign:"center",marginBottom:12,boxSizing:"border-box"}} onKeyDown={e=>e.key==="Enter"&&keyInput.trim()&&setApiKey(keyInput.trim())}/>
-      <button onClick={()=>keyInput.trim()&&setApiKey(keyInput.trim())} style={{background:C.pk,border:"none",borderRadius:10,color:C.bg,padding:"10px 24px",fontSize:13,fontWeight:700,cursor:"pointer"}}>Connect AI →</button>
-      <div style={{fontSize:10,color:C.dim,marginTop:14,textAlign:"center"}}>Key stored in browser only — never shared</div>
-    </div>
-  );
-    return(
-    <div style={{display:"flex",flexDirection:"column",height:"100vh",background:C.bg,fontFamily:FONT}}>
-      <div style={{background:C.surf,borderBottom:`1px solid ${C.bdr}`,padding:"13px 14px",flexShrink:0}}>
-        <div style={{fontSize:9,letterSpacing:2,textTransform:"uppercase",color:C.gr,marginBottom:3}}>AI Assistant</div>
-        <div style={{fontSize:17,fontWeight:800,color:C.w}}>🤖 Claude Chat</div>
-        <div style={{fontSize:9,color:C.gr}}>Knows your full schedule · study partner · anything you need</div>
-      </div>
-      <div ref={boxRef} style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:9}}>
-        {msgs.map((m,i)=>(
-          <div key={i} className="fade-up" style={{display:"flex",justifyContent:m.r==="u"?"flex-end":"flex-start"}}>
-            <div style={{maxWidth:"85%",padding:"10px 14px",borderRadius:12,fontSize:12,lineHeight:1.65,background:m.r==="u"?`${C.b}15`:C.card,border:`1px solid ${m.r==="u"?C.b+"33":C.bdr}`,color:C.text,whiteSpace:"pre-wrap"}}>{m.t}</div>
-          </div>
-        ))}
-        {loading&&<div style={{display:"flex"}}><div style={{padding:"10px 14px",borderRadius:12,fontSize:12,background:C.card,border:`1px solid ${C.bdr}`,color:C.gr,fontStyle:"italic"}}>Thinking...</div></div>}
-        {msgs.length===1&&(
-          <div style={{marginTop:8}}>
-            <div style={{fontSize:9,color:C.gr,marginBottom:7,letterSpacing:1}}>QUICK QUESTIONS</div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-              {QUICK.map(q=><button key={q} onClick={()=>setInput(q)} style={{fontSize:10,padding:"4px 9px",borderRadius:20,background:C.card2,color:C.gr,border:`1px solid ${C.bdr}`,cursor:"pointer",fontFamily:FONT}}>{q}</button>)}
-            </div>
-          </div>
-        )}
-      </div>
-      <div style={{padding:"10px 14px",borderTop:`1px solid ${C.bdr}`,display:"flex",gap:7,flexShrink:0}}>
-        <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&send()} placeholder="Ask anything..." style={{...ip(C.b),flex:1,padding:"10px 12px"}}/>
-        <button onClick={send} disabled={loading} style={{...sb(C.b),padding:"10px 16px",opacity:loading?.5:1,flexShrink:0}}>→</button>
-      </div>
-    </div>
+
+  function getCards(){
+    var out="";
+    var subs=subjects||DEFAULT_SUBS;
+    for(var i=0;i<Math.min(subs.length,10);i++){
+      try{
+        var raw=lsGet("cards_"+subs[i].id);
+        if(!raw)continue;
+        var cards=JSON.parse(raw);
+        for(var j=0;j<Math.min(cards.length,4);j++){
+          if(cards[j].q)out+="\n"+subs[i].name+": "+cards[j].q+" -> "+( cards[j].a||"");
+        }
+      }catch(e){}
+    }
+    try{
+      var vraw=lsGet("vocab_v1");
+      if(vraw){var vlist=JSON.parse(vraw);for(var k=0;k<Math.min(vlist.length,10);k++){out+="\nVocab: "+vlist[k].word+" = "+vlist[k].meaning;}}
+    }catch(e){}
+    return out.slice(0,1500);
+  }
+
+  function buildPrompt(){
+    var goalsTxt=goals.map(function(g){return"["+g.cat+"] "+g.text;}).join("\n")||"None";
+    var todosTxt=(todos._all||[]).filter(function(t){return!t.done;}).map(function(t){return t.text;}).join(", ")||"None";
+    var notes=getSubjectNotes();
+    var cards=getCards();
+    return "You are Mohamed's personal second brain and AI assistant. You know everything about him.\n\nMEMORY:\n"+(memory||"[Fresh start - building memory as we talk]")+"\n\nWHO HE IS:\n23yo Muslim Sudanese-American software engineer at JPMC Philadelphia. Living in car at The Sporting Club during 60-day discipline experiment May-July 2026. Core purpose: become grounded, disciplined, rooted in faith. Studying: Islam (Quran, Hadith, Seerah, Aqeedah), Arabic, history, finance, AWS, LeetCode, vocabulary (root-based). Voice training daily. ABW franchise + SaaS goals. 140 to 165 lbs. Halal only. Daily 5am mosque, 6am club routine.\n\nTODAY: "+WM[ti].name+" - "+WM[ti].theme+"\nSchedule: "+dayDone.done+"/"+dayDone.total+" done\n75 Hard streak: "+(hard75Streak||0)+" days\nAffirmation: "+(affirmation||DEFAULT_AFF)+"\n\nGOALS:\n"+goalsTxt+"\n\nTODOS:\n"+todosTxt+"\n\nSUBJECT NOTES:\n"+notes+"\n\nFLASHCARDS:\n"+cards+"\n\nBe direct, specific, reference his notes. Push him when making excuses. Celebrate real wins. You are his coach, study partner, and second brain combined.";
+  }
+
+  function saveMemory(currentMsgs){
+    if(savingMem||currentMsgs.length<3)return;
+    setSavingMem(true);
+    var convo=currentMsgs.map(function(m){return(m.r==="u"?"Mohamed":"AI")+": "+m.t;}).join("\n").slice(0,4000);
+    var prompt="Current memory about Mohamed:\n"+(memory||"[none yet]")+"\n\nNew conversation:\n"+convo+"\n\nUpdate his memory profile. Write a dense 300-word summary covering: who he is, what he is learning, his progress, goals, struggles, wins, recent topics. Be specific. Return ONLY the summary text, no labels, no JSON.";
+    fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-api-key":CLAUDE_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:500,messages:[{role:"user",content:prompt}]})
+    }).then(function(r){return r.json();}).then(function(d){
+      if(d.content&&d.content[0]){setMemory(d.content[0].text||"");}
+      setSavingMem(false);
+    }).catch(function(){setSavingMem(false);});
+  }
+
+  function send(){
+    if(!input.trim()||loading)return;
+    var txt=input.trim();
+    setInput("");
+    setLoading(true);
+    var next=msgs.concat([{r:"u",t:txt}]);
+    setMsgs(next);
+    var apiMsgs=next.map(function(m){return{role:m.r==="u"?"user":"assistant",content:m.t};});
+    fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-api-key":CLAUDE_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:1200,system:buildPrompt(),messages:apiMsgs})
+    }).then(function(r){return r.json();}).then(function(d){
+      if(d.error){setMsgs(function(m){return m.concat([{r:"a",t:"Error: "+d.error.message}]);});setLoading(false);return;}
+      var reply=d.content&&d.content[0]?d.content[0].text:"No response.";
+      var withReply=next.concat([{r:"a",t:reply}]);
+      var toSave=withReply.slice(-60);
+      setMsgs(toSave);
+      var aiCount=toSave.filter(function(m){return m.r==="a";}).length;
+      if(aiCount>0&&aiCount%6===0)saveMemory(toSave);
+      setLoading(false);
+    }).catch(function(){
+      setMsgs(function(m){return m.concat([{r:"a",t:"Connection error - try again."}]);});
+      setLoading(false);
+    });
+  }
+
+  var QUICK=["What should I focus on today?","Quiz me on my Islamic notes","Help with a LeetCode pattern","Word of the day + root","What have I been learning?","Give me a motivation reset","Review my goals with me","What do I still need to do?"];
+
+  return(
+    React.createElement("div",{style:{display:"flex",flexDirection:"column",height:"100vh",background:C.bg,fontFamily:FONT,paddingBottom:58}},
+      React.createElement("div",{style:{background:C.surf,borderBottom:"1px solid "+C.bdr,padding:"10px 14px",flexShrink:0}},
+        React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:showMem?8:0}},
+          React.createElement("div",null,
+            React.createElement("div",{style:{fontSize:9,letterSpacing:2,textTransform:"uppercase",color:C.gr,marginBottom:1}},"Second Brain"),
+            React.createElement("div",{style:{fontSize:15,fontWeight:800,color:C.w}},"🧠 AI Assistant")
+          ),
+          React.createElement("div",{style:{display:"flex",gap:6}},
+            React.createElement("button",{onClick:function(){setShowMem(function(s){return!s;});},style:{...sb(showMem?C.p:C.gr,true),padding:"4px 9px",fontSize:9}},savingMem?"⟳ Saving...":"💾 Memory"),
+            React.createElement("button",{onClick:function(){saveMemory(msgs);},disabled:savingMem,style:{...sb(C.b,true),padding:"4px 9px",fontSize:9,opacity:savingMem?0.5:1}},"↑ Save Now"),
+            React.createElement("button",{onClick:function(){if(window.confirm("Clear chat? Memory is kept.")){setMsgs([{r:"a",t:"Chat cleared. Memory kept. What do you need?"}]);}},style:{...sb(C.r,true),padding:"4px 8px",fontSize:9}},"🗑")
+          )
+        ),
+        showMem&&React.createElement("div",{style:{background:C.card,borderRadius:10,padding:10,border:"1px solid "+C.p+"33"}},
+          React.createElement("div",{style:{fontSize:9,color:C.p,fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:5}},"Brain Memory"),
+          memory
+            ?React.createElement("div",{style:{fontSize:11,color:C.text,lineHeight:1.6,maxHeight:120,overflowY:"auto"}},memory)
+            :React.createElement("div",{style:{fontSize:11,color:C.gr,fontStyle:"italic"}},"No memory yet. Chat then tap Save Now.")
+        )
+      ),
+      React.createElement("div",{ref:boxRef,style:{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}},
+        msgs.map(function(m,i){
+          return React.createElement("div",{key:i,style:{display:"flex",justifyContent:m.r==="u"?"flex-end":"flex-start"}},
+            React.createElement("div",{style:{maxWidth:"87%",padding:"10px 14px",borderRadius:14,fontSize:12,lineHeight:1.7,background:m.r==="u"?C.b+"18":C.card,border:"1px solid "+(m.r==="u"?C.b+"44":C.bdr),color:C.text,whiteSpace:"pre-wrap"}},m.t)
+          );
+        }),
+        loading&&React.createElement("div",{style:{display:"flex"}},
+          React.createElement("div",{style:{padding:"10px 14px",borderRadius:14,fontSize:12,background:C.card,border:"1px solid "+C.bdr,color:C.gr,fontStyle:"italic"}},"Thinking...")
+        ),
+        msgs.length===1&&React.createElement("div",{style:{marginTop:8}},
+          React.createElement("div",{style:{fontSize:9,color:C.gr,marginBottom:6,letterSpacing:1,textTransform:"uppercase"}},"Ask your second brain"),
+          React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:5}},
+            QUICK.map(function(q){
+              return React.createElement("button",{key:q,onClick:function(){setInput(q);},style:{fontSize:10,padding:"5px 10px",borderRadius:20,background:C.card2,color:C.gr,border:"1px solid "+C.bdr,cursor:"pointer",fontFamily:FONT}},q);
+            })
+          )
+        )
+      ),
+      React.createElement("div",{style:{padding:"10px 14px 12px",borderTop:"1px solid "+C.bdr,display:"flex",gap:7,flexShrink:0,background:C.surf}},
+        React.createElement("input",{value:input,onChange:function(e){setInput(e.target.value);},onKeyDown:function(e){if(e.key==="Enter"&&!e.shiftKey)send();},placeholder:"Ask anything — it remembers everything...",style:{...ip(C.b),flex:1,padding:"11px 14px"}}),
+        React.createElement("button",{onClick:send,disabled:loading,style:{...sb(C.b),padding:"11px 18px",opacity:loading?0.5:1,flexShrink:0}},"→")
+      )
+    )
   );
 }
+
 
 // ══════════════════════════════════════════
 // NAV BAR
@@ -1601,7 +1684,7 @@ function App(){
       {screen===SC.todo&&<Todo todos={todos} setTodos={setTodos}/>}
       {screen===SC.goals&&<Goals goals={goals} setGoals={setGoals}/>}
       {screen===SC.hard75&&<Hard75 hard75={hard75} setHard75={setHard75} hard75Streak={hard75Streak} setHard75Streak={setHard75Streak}/>}
-      {screen===SC.chat&&<Chat schedule={schedData} checks={checks} todos={todos} goals={goals} hard75Streak={hard75Streak}/>}
+      {screen===SC.chat&&<Chat schedule={schedData} checks={checks} todos={todos} goals={goals} hard75Streak={hard75Streak} subjects={subjects} affirmation={affirmation}/>}
       {!hideNav&&<NavBar screen={screen} nav={nav}/>}
     </div>
   );

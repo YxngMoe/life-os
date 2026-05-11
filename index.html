@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="theme-color" content="#05070e"/>
-<title>Lyfe OS</title>
+<title>Mohamed — Life OS</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -979,7 +979,7 @@ function RichEditor({content,onChange,color,fontSize,placeholder}){
     if(!key){alert("Set up AI key in the Chat tab first.");return;}
     fetch("https://api.anthropic.com/v1/messages",{method:"POST",
       headers:{"Content-Type":"application/json","x-api-key":key||CLAUDE_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,messages:[{role:"user",content:"Fix ALL grammar, spelling, clarity in this text. Return ONLY the corrected text, no commentary, no quotes:\n\n"+txt}]})
+      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:3000,messages:[{role:"user",content:"Fix ALL grammar, spelling, clarity in this text. Return ONLY the corrected text, no commentary, no quotes:\n\n"+txt}]})
     }).then(r=>r.json()).then(d=>{
       const f=(d.content||[]).find(b=>b.type==="text");
       if(f&&edRef.current){edRef.current.innerText=f.text;syncContent();}
@@ -991,7 +991,7 @@ function RichEditor({content,onChange,color,fontSize,placeholder}){
     if(!key){alert("Set up AI key in the Chat tab first.");return;}
     fetch("https://api.anthropic.com/v1/messages",{method:"POST",
       headers:{"Content-Type":"application/json","x-api-key":key||CLAUDE_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-      body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:3000,messages:[{role:"user",content:"Rewrite this text to be clearer, more articulate, and better structured. Keep the same meaning and voice. Return ONLY the rewritten text:\n\n"+txt}]})
+      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:3000,messages:[{role:"user",content:"Rewrite this text to be clearer, more articulate, and better structured. Keep the same meaning and voice. Return ONLY the rewritten text:\n\n"+txt}]})
     }).then(r=>r.json()).then(d=>{
       const f=(d.content||[]).find(b=>b.type==="text");
       if(f&&edRef.current){edRef.current.innerText=f.text;syncContent();}
@@ -1484,7 +1484,7 @@ function Chat({schedule,checks,todos,goals,hard75Streak}){
     const apiMsgs=next.filter((m,i)=>i>0||m.r!=="a").map(m=>({role:m.r==="u"?"user":"assistant",content:m.t}));
     try{
       const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey||CLAUDE_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,
+        body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:1000,
           system:`You are Mohamed's personal Life OS AI assistant. You have access to his current status:
 - Today: ${WM[ti].name} — ${WM[ti].theme}
 - Routine completion today: ${done}/${total} steps (${total>0?Math.round(done/total*100):0}%)
@@ -1494,8 +1494,9 @@ function Chat({schedule,checks,todos,goals,hard75Streak}){
 About Mohamed: 23yo Muslim Sudanese-American software/data engineer at JPMC, Philadelphia. Living in car at Sporting Club during 60-day discipline experiment. Goals: articulate speaker (Obama-level), master Arabic + Islamic knowledge (Quran, Hadith, Seerah, Aqeedah), grow to 165 lbs lean from 140, build ABW franchise + SaaS. Daily schedule: 5am wake/mosque/car voice routine, 6am Sporting Club, lifting + basketball warmup, recovery, JPMC work 10am-12:45pm, studies 2-5:30pm, evening athletics (boxing+golf or basketball+pickleball), cold plunge, recall recording, Isha, sleep 11:30pm. Studying: Islam, Arabic, history, finance, AI/tech, vocabulary (root-based). Derma rolling Tue/Thu/Sat/Sun. Voice routine: lip trills, tongue exercises, scripts, singing from Nuha's playlist. 16 cups water daily. Halal only. Be direct, specific, knowledgeable. You know everything about him.`,
           messages:apiMsgs})});
       const d=await res.json();
+      if(d.error){setMsgs(m=>[...m,{r:"a",t:"API Error: "+d.error.message}]);setLoading(false);return;}
       const t=(d.content||[]).find(b=>b.type==="text");
-      setMsgs(m=>[...m,{r:"a",t:t?t.text:"Connection error, try again."}]);
+      setMsgs(m=>[...m,{r:"a",t:t?t.text:"No response — try again."}]);
     }catch(e){setMsgs(m=>[...m,{r:"a",t:"Connection error — try again."}]);}
     setLoading(false);
   }

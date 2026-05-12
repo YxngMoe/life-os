@@ -496,170 +496,171 @@ function Home({nav,checks,schedule,todos,setTodos,hard75,setHard75,hard75Streak,
 // ══════════════════════════════════════════
 function Week({onDayClick,checks,schedule,events,setEvents}){
   const today=new Date();
-  const[weekStart,setWeekStart]=React.useState(()=>getMondayOf(today));
-  const[addingTo,setAddingTo]=React.useState(null);
-  const[evText,setEvText]=React.useState("");
-  const[evTime,setEvTime]=React.useState("09:00");
-  const tiToday=today.getDay()===0?6:today.getDay()-1;
-  const isThisWeek=getMondayOf(today).getTime()===weekStart.getTime();
+  const[ws,setWs]=React.useState(function(){return getMondayOf(today);});
+  const[addTo,setAddTo]=React.useState(null);
+  const[evTxt,setEvTxt]=React.useState("");
+  const[evTm,setEvTm]=React.useState("09:00");
+  const tiNow=today.getDay()===0?6:today.getDay()-1;
+  const isTW=getMondayOf(today).getTime()===ws.getTime();
   const nowMin=today.getHours()*60+today.getMinutes();
 
-  // Build a smart layout for each day:
-  // Actual blocks shown proportionally, large gaps condensed to thin dividers
-  function buildLayout(blocks){
-    if(!blocks||blocks.length===0)return[];
-    const sorted=blocks
-      .map(function(b,bi){return{...b,_origIdx:bi,sm:timeToMin(b.t),em:timeToMin(b.e)||timeToMin(b.t)+30};})
-      .filter(function(b){return b.sm>=300&&b.sm<1440;})
-      .sort(function(a,b){return a.sm-b.sm;});
-    if(sorted.length===0)return[];
-    const items=[];
-    const DAY_S=sorted[0].sm;
-    const DAY_E=sorted[sorted.length-1].em;
-    const ACTIVE=DAY_E-DAY_S;
-    // Add gap at start if first block doesn't start at 5am
-    let cursor=DAY_S;
-    for(let i=0;i<sorted.length;i++){
-      const b=sorted[i];
-      const gap=b.sm-cursor;
-      if(gap>30){items.push({type:"gap",mins:gap,label:minsToLabel(cursor)+"–"+minsToLabel(b.sm)});}
-      items.push({type:"block",...b,_bi:b._origIdx,mins:Math.max(b.em-b.sm,15)});
-      cursor=b.em;
-    }
-    // Calculate weights: gaps get 0.3px/min, blocks get full px/min
-    const TOTAL_H=720;
-    let blockMins=0,gapMins=0;
-    items.forEach(function(it){it.type==="block"?blockMins+=it.mins:gapMins+=it.mins;});
-    const GAP_PX_PER_MIN=0.25;
-    const gapPx=gapMins*GAP_PX_PER_MIN;
-    const blockPx=TOTAL_H-gapPx;
-    const pxPerBlockMin=blockMins>0?blockPx/blockMins:2;
-    items.forEach(function(it){
-      it.h=it.type==="block"?Math.max(it.mins*pxPerBlockMin,10):Math.max(it.mins*GAP_PX_PER_MIN,8);
-    });
-    return items;
+  function t12(m){
+    var h=Math.floor(m/60)%24,mn=m%60,ap=h>=12?"pm":"am",h2=h%12||12;
+    return h2+(mn?":"+(mn<10?"0"+mn:mn):"")+ap;
   }
+  function blkH(mins){return Math.max(30,mins*2.6);}
 
-  function minsToLabel(m){
-    const h=Math.floor(m/60);const mm=m%60;
-    const ampm=h>=12?"pm":"am";const h12=h>12?h-12:h===0?12:h;
-    return h12+(mm>0?":"+String(mm).padStart(2,"0"):"")+ampm;
-  }
-
-  function addEvent(di){
-    if(!evText.trim())return;
-    setEvents({...events,[di]:[...(events[di]||[]),{id:Date.now(),text:evText.trim(),time:evTime,color:WM[di].color}]});
-    setEvText("");setAddingTo(null);
+  function doAdd(di){
+    if(!evTxt.trim())return;
+    setEvents({...events,[di]:[...(events[di]||[]),{id:Date.now(),text:evTxt.trim(),time:evTm,color:WM[di].color}]});
+    setEvTxt("");setAddTo(null);
   }
 
   return(
-    <div style={{background:C.bg,minHeight:"100vh",fontFamily:FONT}}>
-      {/* Sticky header */}
-      <div style={{background:C.surf,borderBottom:"1px solid "+C.bdr,padding:"13px 14px",position:"sticky",top:0,zIndex:20}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:2}}>
-          <button onClick={()=>setWeekStart(d=>addDays(d,-7))} style={{...sb(C.gr,true),padding:"4px 10px",fontSize:12}}>←</button>
+    <div style={{background:C.bg,minHeight:"100vh",fontFamily:FONT,paddingBottom:70}}>
+      {/* NAV */}
+      <div style={{background:C.surf,borderBottom:"1px solid "+C.bdr,padding:"11px 14px",position:"sticky",top:0,zIndex:20}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <button onClick={function(){setWs(function(d){return addDays(d,-7);});}} style={{background:C.card2,border:"1px solid "+C.bdr,borderRadius:8,padding:"6px 12px",color:C.w,cursor:"pointer",fontFamily:FONT,fontSize:14}}>‹</button>
           <div style={{flex:1,textAlign:"center"}}>
-            <div style={{fontSize:13,fontWeight:700,color:C.w}}>{fmtDate(weekStart)} — {fmtDate(addDays(weekStart,6))}</div>
-            {!isThisWeek&&<button onClick={()=>setWeekStart(getMondayOf(today))} style={{background:"none",border:"none",color:C.b,fontSize:10,cursor:"pointer",fontFamily:FONT}}>Today</button>}
+            <div style={{fontSize:13,fontWeight:700,color:C.w}}>{fmtDate(ws)} – {fmtDate(addDays(ws,6))}</div>
+            {!isTW&&<button onClick={function(){setWs(getMondayOf(today));}} style={{background:"none",border:"none",color:C.b,fontSize:10,cursor:"pointer"}}>↩ Today</button>}
           </div>
-          <button onClick={()=>setWeekStart(d=>addDays(d,7))} style={{...sb(C.gr,true),padding:"4px 10px",fontSize:12}}>→</button>
+          <button onClick={function(){setWs(function(d){return addDays(d,7);});}} style={{background:C.card2,border:"1px solid "+C.bdr,borderRadius:8,padding:"6px 12px",color:C.w,cursor:"pointer",fontFamily:FONT,fontSize:14}}>›</button>
         </div>
-        <div style={{fontSize:9,color:C.gr,textAlign:"center"}}>Tap day → full routine · + to add event</div>
       </div>
 
-      <div style={{overflowX:"auto",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
-        <div style={{minWidth:400,padding:"0 4px 80px"}}>
-          {/* Day header row */}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3,padding:"8px 0 6px",position:"sticky",top:64,background:C.bg,zIndex:10}}>
-            {WM.map((d,i)=>{
-              const dayDate=addDays(weekStart,i);
-              const isToday=isThisWeek&&i===tiToday;
-              const dayChecks=schedule[i]?(()=>{let t=0,dn=0;schedule[i].blocks.forEach((b,bi)=>b.items.forEach((_,ii)=>{t++;if(checks[i+"-"+bi+"-"+ii])dn++;}));return{done:dn,total:t};})():{done:0,total:0};
-              const dayEvs=events[i]||[];
+      <div style={{overflowX:"auto"}}>
+        <div style={{minWidth:500,padding:"8px 6px 0"}}>
+
+          {/* DAY HEADERS */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3,marginBottom:6,position:"sticky",top:52,background:C.bg,zIndex:10,paddingBottom:4}}>
+            {WM.map(function(d,i){
+              var isT=isTW&&i===tiNow;
+              var dc=schedule[i]?(function(){var t=0,dn=0;(schedule[i].blocks||[]).forEach(function(b,bi){(b.items||[]).forEach(function(_,ii){t++;if(checks[i+"-"+bi+"-"+ii])dn++;});});return{done:dn,total:t};})():{done:0,total:0};
+              var pct=dc.total>0?Math.round(dc.done/dc.total*100):0;
               return(
-                <div key={i} style={{display:"flex",flexDirection:"column",gap:2}}>
-                  <div onClick={()=>onDayClick(i)} style={{background:isToday?d.color+"18":C.card,border:"1.5px solid "+(isToday?d.color+"88":C.bdr),borderRadius:10,padding:"6px 3px",textAlign:"center",cursor:"pointer",boxShadow:isToday?"0 0 16px "+d.color+"33":"none"}}>
-                    <div style={{fontSize:8,color:isToday?d.color:C.gr,fontWeight:700}}>{d.short}</div>
-                    <div style={{fontSize:8,color:isToday?d.color:C.dim}}>{fmtDate(dayDate)}</div>
-                    <div style={{fontSize:14,margin:"2px 0"}}>{d.emoji}</div>
-                    {isToday&&<div style={{fontSize:7,color:d.color,fontWeight:800}}>TODAY</div>}
-                    {dayChecks.total>0&&<div style={{fontSize:7,color:d.color,fontWeight:700}}>{Math.round(dayChecks.done/dayChecks.total*100)}%</div>}
-                    <div style={{background:"rgba(255,255,255,0.05)",borderRadius:2,height:2.5,margin:"2px 2px 0",overflow:"hidden"}}>
-                      <div style={{height:"100%",width:dayChecks.total>0?(Math.round(dayChecks.done/dayChecks.total*100)+"%"):"0%",background:d.color}}/>
-                    </div>
+                <div key={i} onClick={function(){onDayClick(i);}} style={{background:isT?d.color+"22":C.card,border:"1.5px solid "+(isT?d.color:C.bdr),borderRadius:10,padding:"7px 4px",textAlign:"center",cursor:"pointer",boxShadow:isT?"0 0 16px "+d.color+"44":"none"}}>
+                  <div style={{fontSize:9,color:isT?d.color:C.gr,fontWeight:700}}>{d.short.toUpperCase()}</div>
+                  <div style={{fontSize:8,color:isT?d.color:C.dim}}>{fmtDate(addDays(ws,i))}</div>
+                  <div style={{fontSize:16,margin:"2px 0"}}>{d.emoji}</div>
+                  {isT&&<div style={{fontSize:7,color:d.color,fontWeight:800}}>TODAY</div>}
+                  {dc.total>0&&<div style={{fontSize:9,color:isT?d.color:C.gr,fontWeight:700}}>{pct}%</div>}
+                  <div style={{height:2,borderRadius:1,margin:"2px 3px 0",background:C.bdr,overflow:"hidden"}}>
+                    <div style={{height:"100%",width:pct+"%",background:d.color}}/>
                   </div>
-                  {dayEvs.map(ev=>(
-                    <div key={ev.id} onClick={()=>onDayClick(i)} style={{background:ev.color+"22",border:"1px solid "+ev.color+"55",borderRadius:5,padding:"2px 3px",cursor:"pointer",textAlign:"center"}}>
-                      <div style={{fontSize:7,color:ev.color,fontWeight:700}}>{ev.time}</div>
-                      <div style={{fontSize:7,color:C.text,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{ev.text}</div>
-                    </div>
-                  ))}
-                  <button onClick={e=>{e.stopPropagation();setAddingTo(i);}} style={{background:"transparent",border:"1px dashed "+d.color+"44",borderRadius:5,padding:"1px",color:d.color,fontSize:10,cursor:"pointer",fontFamily:FONT}}>+</button>
                 </div>
               );
             })}
           </div>
 
-          {/* Smart block columns — no fixed time axis */}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3}}>
-            {WM.map((d,di)=>{
-              const isToday=isThisWeek&&di===tiToday;
-              const layout=buildLayout(schedule[di]?.blocks||[]);
-              let accY=0;
+          {/* BLOCK COLUMNS */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3,alignItems:"start"}}>
+            {WM.map(function(d,di){
+              var isT=isTW&&di===tiNow;
+              var blocks=(schedule[di]&&schedule[di].blocks)||[];
+              // Sort and filter blocks within the day
+              var day=blocks
+                .map(function(b,bi){return{...b,bi:bi,sm:timeToMin(b.t),em:timeToMin(b.e)||timeToMin(b.t)+30};})
+                .filter(function(b){return b.sm>=300&&b.sm<1440;})
+                .sort(function(a,b){return a.sm-b.sm;});
+              if(day.length===0)return(
+                <div key={di} style={{background:isT?C.card:"#06060f",borderRadius:10,minHeight:120,border:"1px solid "+C.bdr,opacity:isT?1:0.5,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}} onClick={function(){onDayClick(di);}}>
+                  <div style={{fontSize:10,color:C.dim}}>Rest</div>
+                </div>
+              );
               return(
-                <div key={di} onClick={()=>onDayClick(di)} style={{background:isToday?C.card:"#070712",borderRadius:10,overflow:"hidden",cursor:"pointer",border:"1px solid "+(isToday?d.color+"44":C.bdr),minHeight:200,opacity:isToday?1:0.55,display:"flex",flexDirection:"column"}}>
-                  {layout.map((item,idx)=>{
-                    if(item.type==="gap"){
-                      return(
-                        <div key={idx} style={{height:item.h,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",borderTop:"1px dashed "+C.bdr,borderBottom:"1px dashed "+C.bdr}}>
-                          <div style={{fontSize:5.5,color:C.dim,letterSpacing:.5}}>{item.label}</div>
+                <div key={di} onClick={function(){onDayClick(di);}}
+                  style={{background:isT?C.card:"#06060f",borderRadius:10,overflow:"hidden",cursor:"pointer",border:"1px solid "+(isT?d.color+"44":C.bdr),opacity:isT?1:0.52}}>
+                  {(function(){
+                    var rows=[];
+                    var prev=day[0].sm;
+                    for(var i=0;i<day.length;i++){
+                      var b=day[i];
+                      var gap=b.sm-prev;
+                      // Gap divider
+                      if(gap>30&&i>0){
+                        rows.push(
+                          <div key={"g"+i} style={{height:14,display:"flex",alignItems:"center",justifyContent:"center",borderTop:"1px dashed "+C.bdr+"77",borderBottom:"1px dashed "+C.bdr+"77"}}>
+                            <span style={{fontSize:6,color:C.dim,letterSpacing:.3}}>{t12(prev)}–{t12(b.sm)}</span>
+                          </div>
+                        );
+                      }
+                      var mins=Math.max(b.em-b.sm,10);
+                      var h=blkH(mins);
+                      var cc=(CAT[b.cat]&&CAT[b.cat].c)||C.gr;
+                      var done=(b.items||[]).length>0&&(b.items||[]).every(function(_,ii){return checks[di+"-"+b.bi+"-"+ii];});
+                      var now=isT&&nowMin>=b.sm&&nowMin<b.em;
+                      rows.push(
+                        <div key={b.bi} style={{
+                          height:h,
+                          background:now?cc+"55":done?cc+"18":isT?cc+"20":"transparent",
+                          borderLeft:"3px solid "+(isT?(now?cc:cc+"aa"):cc+"22"),
+                          borderBottom:"1px solid "+C.bdr+"66",
+                          padding:"4px 5px",
+                          position:"relative",
+                          overflow:"hidden",
+                          boxShadow:now?"inset 0 0 14px "+cc+"44":"none",
+                          transition:"background .2s"
+                        }}>
+                          {/* Emoji + title */}
+                          <div style={{display:"flex",alignItems:"flex-start",gap:3}}>
+                            <span style={{fontSize:9,flexShrink:0,lineHeight:1.2}}>{b.emoji}</span>
+                            <div style={{flex:1,overflow:"hidden"}}>
+                              <div style={{
+                                fontSize:7,fontWeight:700,lineHeight:1.3,
+                                color:now?C.w:isT?C.text:C.gr,
+                                overflow:"hidden",
+                                display:"-webkit-box",
+                                WebkitLineClamp:h>50?2:1,
+                                WebkitBoxOrient:"vertical",
+                                textDecoration:done?"line-through":"none",
+                                opacity:done?0.5:1
+                              }}>
+                                {b.title}
+                              </div>
+                              {h>40&&<div style={{fontSize:6,color:now?cc:isT?cc+"cc":C.dim,marginTop:1,fontWeight:500}}>{t12(b.sm)}–{t12(b.em)}</div>}
+                            </div>
+                          </div>
+                          {/* NOW indicator bar at bottom */}
+                          {now&&<div style={{position:"absolute",bottom:0,left:0,right:0,height:2.5,background:cc,boxShadow:"0 0 8px "+cc}}/>}
                         </div>
                       );
+                      prev=b.em;
                     }
-                    const cc=CAT[item.cat]?.c||C.gr;
-                    const bDone=item.items&&item._bi!==undefined?item.items.filter((_,ii)=>checks[di+"-"+item._bi+"-"+ii]).length:0;
-                    const allDone=item.items&&bDone===item.items.length&&item.items.length>0;
-                    const isNow=isToday&&nowMin>=item.sm&&nowMin<item.em;
-                    return(
-                      <div key={idx} style={{height:item.h,flexShrink:0,background:isNow?cc+"44":isToday?cc+"22":cc+"0d",borderLeft:"2px solid "+(isToday?cc+(isNow?"ee":"77"):cc+"28"),borderBottom:"1px solid "+C.bdr+"88",overflow:"hidden",padding:"2px 3px",position:"relative",boxShadow:isNow?"0 0 10px "+cc+"55":"none"}}>
-                        {item.h>16&&(
-                          <div style={{fontSize:6,color:isNow?C.w:isToday?cc:cc+"66",fontWeight:700,lineHeight:1.2,overflow:"hidden"}}>
-                            {allDone?"✓ ":""}{item.emoji} {item.title}
+                    // Add event button
+                    rows.push(
+                      <div key="add" style={{padding:3}}>
+                        {(events[di]||[]).map(function(ev){return(
+                          <div key={ev.id} style={{background:ev.color+"22",border:"1px solid "+ev.color+"55",borderRadius:4,padding:"2px 4px",marginBottom:2}}>
+                            <div style={{fontSize:7,color:ev.color,fontWeight:700}}>{ev.time} {ev.text}</div>
                           </div>
-                        )}
-                        {item.h>28&&(
-                          <div style={{fontSize:5,color:isToday?C.gr:C.dim,marginTop:1}}>{minsToLabel(item.sm)}</div>
-                        )}
-                        {isNow&&(
-                          <div style={{position:"absolute",bottom:0,left:0,right:0,height:2,background:cc,boxShadow:"0 0 6px "+cc}}/>
-                        )}
+                        );})}
+                        <button onClick={function(e){e.stopPropagation();setAddTo(di);}} style={{width:"100%",padding:"3px 2px",background:"transparent",border:"1px dashed "+d.color+"44",borderRadius:5,color:d.color+"99",fontSize:9,cursor:"pointer",fontFamily:FONT,marginTop:2}}>+ event</button>
                       </div>
                     );
-                  })}
-                  {layout.length===0&&(
-                    <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                      <div style={{fontSize:8,color:C.dim}}>Rest</div>
-                    </div>
-                  )}
+                    return rows;
+                  })()}
                 </div>
               );
             })}
           </div>
+
         </div>
       </div>
 
-      {/* Add event modal */}
-      {addingTo!==null&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:200}} onClick={()=>setAddingTo(null)}>
-          <div style={{background:C.card,borderRadius:"16px 16px 0 0",padding:20,width:"100%",maxWidth:480}} onClick={e=>e.stopPropagation()}>
-            <div style={{fontSize:14,fontWeight:700,color:WM[addingTo].color,marginBottom:14}}>Add event — {WM[addingTo].name}</div>
+      {/* ADD EVENT MODAL */}
+      {addTo!==null&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:300}} onClick={function(){setAddTo(null);}}>
+          <div style={{background:C.card,borderRadius:"18px 18px 0 0",padding:22,width:"100%",maxWidth:480,border:"1px solid "+WM[addTo].color+"44"}} onClick={function(e){e.stopPropagation();}}>
+            <div style={{fontSize:14,fontWeight:700,color:WM[addTo].color,marginBottom:14}}>Add event — {WM[addTo].name}</div>
             <div style={{display:"flex",gap:8,marginBottom:12}}>
-              <input type="time" value={evTime} onChange={e=>setEvTime(e.target.value)} style={{...ip(WM[addingTo].color),width:100,flexShrink:0}}/>
-              <input value={evText} onChange={e=>setEvText(e.target.value)} placeholder="Dentist, appointment..." style={ip(WM[addingTo].color)} autoFocus onKeyDown={e=>e.key==="Enter"&&addEvent(addingTo)}/>
+              <input type="time" value={evTm} onChange={function(e){setEvTm(e.target.value);}} style={{...ip(WM[addTo].color),width:110,flexShrink:0}}/>
+              <input value={evTxt} onChange={function(e){setEvTxt(e.target.value);}} placeholder="Dentist, appointment..." style={ip(WM[addTo].color)} autoFocus onKeyDown={function(e){if(e.key==="Enter")doAdd(addTo);}}/>
             </div>
             <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>addEvent(addingTo)} style={{...sb(WM[addingTo].color),flex:1}}>Add to Calendar</button>
-              <button onClick={()=>setAddingTo(null)} style={sb(WM[addingTo].color,true)}>Cancel</button>
+              <button onClick={function(){doAdd(addTo);}} style={{...sb(WM[addTo].color),flex:1}}>Add</button>
+              <button onClick={function(){setAddTo(null);}} style={sb(WM[addTo].color,true)}>Cancel</button>
             </div>
           </div>
         </div>
@@ -1856,58 +1857,71 @@ function Goals({goals,setGoals}){
   function setVImg(i,url){const nv=[...vBoard];nv[i]=url;setVBoard(nv);}
 
   return(
-    <div style={{background:C.bg,minHeight:"100vh",fontFamily:FONT}}>
-      <div style={{background:C.surf,borderBottom:`1px solid ${C.bdr}`,padding:"13px 14px"}}>
-        <div style={{fontSize:9,letterSpacing:2,textTransform:"uppercase",color:C.gr,marginBottom:6}}>Vision & Goals</div>
-        <div style={{display:"flex",gap:4,overflowX:"auto"}}>
-          {[["vision","🌟 Vision Board"],["goals","🎯 Goals"],["dua","🤲 Ultimate Dua"]].map(([v,l])=><button key={v} onClick={()=>setTab(v)} style={{...sb(C.a,tab!==v),padding:"5px 12px",fontSize:10,whiteSpace:"nowrap"}}>{l}</button>)}
+    <div style={{background:C.bg,minHeight:"100vh",fontFamily:FONT,paddingBottom:80}}>
+      {/* STICKY HEADER */}
+      <div style={{background:C.surf,borderBottom:"1px solid "+C.bdr,padding:"13px 14px",position:"sticky",top:0,zIndex:10}}>
+        <div style={{fontSize:9,letterSpacing:2,textTransform:"uppercase",color:C.gr,marginBottom:8}}>Vision & Goals</div>
+        <div style={{display:"flex",gap:6}}>
+          {[["vision","🌟 Vision"],["goals","🎯 Goals"],["dua","🤲 Dua"]].map(function(t){
+            return React.createElement("button",{
+              key:t[0],
+              onClick:function(){setTab(t[0]);},
+              style:{...sb(tab===t[0]?C.a:C.gr,tab!==t[0]),padding:"7px 16px",fontSize:11,flexShrink:0}
+            },t[1]);
+          })}
         </div>
       </div>
-      <div style={{padding:"13px 14px 0"}}>
-        {/* VISION BOARD */}
-        {tab==="vision"&&(
-          <VisionBoard vBoard={vBoard} setVBoard={setVBoard}/>
-        )}
-        {/* GOALS */}
-        {tab==="goals"&&(<>
-          <div style={{marginBottom:12}}>
-            <select value={cat} onChange={e=>setCat(e.target.value)} style={{...ip(C.a),marginBottom:7}}>
-              {CATS.map(([v,l])=><option key={v} value={v}>{l}</option>)}
-            </select>
-            <div style={{display:"flex",gap:7,marginBottom:7}}>
-              <input value={newG} onChange={e=>setNewG(e.target.value)} onKeyDown={e=>e.key==="Enter"&&add()} placeholder="Add a goal..." style={{...ip(C.a),flex:1}} spellCheck={true}/>
-              <button onClick={add} style={{...sb(C.a),padding:"8px 13px"}}>+</button>
+
+      <div style={{padding:"14px 14px 0"}}>
+        {tab==="vision"&&React.createElement(VisionBoard,{vBoard:vBoard,setVBoard:setVBoard})}
+
+        {tab==="goals"&&(
+          <div>
+            <div style={{marginBottom:12}}>
+              <select value={cat} onChange={function(e){setCat(e.target.value);}} style={{...ip(C.a),marginBottom:8}}>
+                {CATS.map(function(c2){return <option key={c2[0]} value={c2[0]}>{c2[1]}</option>;})}
+              </select>
+              <div style={{display:"flex",gap:7,marginBottom:8}}>
+                <input value={newG} onChange={function(e){setNewG(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")add();}} placeholder="Add a goal..." style={{...ip(C.a),flex:1}} spellCheck={true}/>
+                <button onClick={add} style={{...sb(C.a),padding:"8px 14px",fontSize:15}}>+</button>
+              </div>
+              <button onClick={function(){setNewG(GOAL_TEMPLATE);}} style={{...sb(C.gr,true),padding:"5px 12px",fontSize:10}}>📋 Template</button>
             </div>
-            <button onClick={()=>setNewG(GOAL_TEMPLATE)} style={{...sb(C.gr,true),padding:"4px 10px",fontSize:10}}>📋 Use template</button>
-          </div>
-          {/* All goals */}
-          <div style={{marginBottom:12}}>
-            <div style={{fontSize:9,color:C.gr,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",marginBottom:6}}>All Goals ({goals.length})</div>
-          </div>
-          {CATS.map(([v,l,cc])=>{const cg=goals.filter(g=>g.cat===v);if(cg.length===0)return null;return(
-            <div key={v} style={{marginBottom:14}}>
-              <div style={{fontSize:9,color:cc,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",marginBottom:6}}>{l}</div>
-              {cg.map(g=>(
-                <div key={g.id} style={{display:"flex",gap:9,padding:"9px 12px",background:C.card,border:`1px solid ${cc}22`,borderLeft:`3px solid ${cc}`,borderRadius:10,marginBottom:6,opacity:g.done?.4:1}}>
-                  <button onClick={()=>toggle(g.id)} style={{width:16,height:16,borderRadius:4,flexShrink:0,marginTop:1,border:`1.5px solid ${g.done?cc:cc+"44"}`,background:g.done?cc:"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{g.done&&<span style={{color:C.bg,fontSize:10,fontWeight:900}}>✓</span>}</button>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:11,color:C.text,textDecoration:g.done?"line-through":"none",whiteSpace:"pre-wrap"}}>{g.text}</div>
-                    {g.created&&<div style={{fontSize:8,color:C.gr,marginTop:3}}>{g.created}</div>}
+            {goals.length===0&&<div style={{textAlign:"center",padding:"40px 0",color:C.gr,fontSize:12}}>No goals yet. Add your first above.</div>}
+            {CATS.map(function(cat2){
+              var cg=goals.filter(function(g){return g.cat===cat2[0];});
+              if(cg.length===0)return null;
+              return(
+                <div key={cat2[0]} style={{marginBottom:16}}>
+                  <div style={{fontSize:9,color:cat2[2],fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",marginBottom:7,display:"flex",alignItems:"center",gap:6}}>
+                    <div style={{width:8,height:8,borderRadius:2,background:cat2[2],flexShrink:0}}/>
+                    {cat2[1]}
+                    <span style={{color:C.dim,fontWeight:400}}>({cg.length})</span>
                   </div>
-                  <button onClick={()=>del(g.id)} style={{background:"none",border:"none",color:C.r,cursor:"pointer",fontSize:13,opacity:.6}}>×</button>
+                  {cg.map(function(g){return(
+                    <div key={g.id} style={{display:"flex",gap:9,padding:"10px 12px",background:C.card,border:"1px solid "+cat2[2]+"28",borderLeft:"3px solid "+cat2[2],borderRadius:10,marginBottom:6,opacity:g.done?0.4:1}}>
+                      <button onClick={function(){toggle(g.id);}} style={{width:18,height:18,borderRadius:4,flexShrink:0,marginTop:1,border:"1.5px solid "+(g.done?cat2[2]:cat2[2]+"44"),background:g.done?cat2[2]:"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        {g.done&&<span style={{color:C.bg,fontSize:10,fontWeight:900}}>✓</span>}
+                      </button>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:12,color:C.text,textDecoration:g.done?"line-through":"none",whiteSpace:"pre-wrap",lineHeight:1.5}}>{g.text}</div>
+                        {g.created&&<div style={{fontSize:8,color:C.gr,marginTop:3}}>{g.created}</div>}
+                      </div>
+                      <button onClick={function(){del(g.id);}} style={{background:"none",border:"none",color:C.r,cursor:"pointer",fontSize:16,opacity:0.5,flexShrink:0,alignSelf:"flex-start"}}>×</button>
+                    </div>
+                  );})}
                 </div>
-              ))}
-            </div>
-          );})}
-          {goals.length===0&&<div style={{textAlign:"center",padding:"50px 0",color:C.gr,fontSize:12}}>No goals yet. Start building your vision.</div>}
-        </>)}
-        {/* DUA */}
+              );
+            })}
+          </div>
+        )}
+
         {tab==="dua"&&(
           <div>
-            <div style={{fontSize:10,color:C.gr,marginBottom:8,lineHeight:1.6}}>Your ultimate dua — read this every morning at the mosque. Be specific. Ask for exactly what you want.</div>
-            <textarea value={dua} onChange={e=>setDua(e.target.value)} spellCheck={true}
-              placeholder={"In the name of Allah, the Most Gracious, the Most Merciful...\n\nYa Allah, I ask you for:\n\n🕌 Deen:\n🌍 Dunya:\n♾️ Akhira:\n👨‍👩‍👧‍👦 Family:\n💍 Future wife:\n💼 Business:\n🏋️ Health:\n📚 Knowledge:\n💰 Financial freedom:\n\nAmeen."}
-              style={{...ta(C.a),minHeight:"70vh",lineHeight:1.9,fontSize:14}}/>
+            <div style={{fontSize:11,color:C.gr,marginBottom:10,lineHeight:1.7}}>Your ultimate dua — read every morning at the mosque. Be specific. Ask for exactly what you want.</div>
+            <textarea value={dua} onChange={function(e){setDua(e.target.value);}} spellCheck={true}
+              placeholder={"Ya Allah, I ask you for:\n\n🕌 Deen:\n🌍 Dunya:\n♾️ Akhira:\n👨‍👩‍👧‍👦 Family:\n💍 Future wife:\n💼 Business:\n🏋️ Health:\n📚 Knowledge:\n💰 Financial freedom:\n\nAmeen."}
+              style={{...ta(C.a),minHeight:500,lineHeight:1.9,fontSize:14}}/>
           </div>
         )}
       </div>
@@ -1915,9 +1929,6 @@ function Goals({goals,setGoals}){
   );
 }
 
-// ══════════════════════════════════════════
-// 75 HARD
-// ══════════════════════════════════════════
 function Hard75({hard75,setHard75,hard75Streak,setHard75Streak}){
   const tasks=hard75.tasks||H75_DEFAULT;
   const todayKey=new Date().toDateString();

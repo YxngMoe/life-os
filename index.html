@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="theme-color" content="#05070e"/>
+<meta name="theme-color" content="#050509"/>
 <title>Mohamed — Life OS</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-body{background:#05070e;font-family:'Inter',system-ui,sans-serif;overscroll-behavior:none;-webkit-font-smoothing:antialiased;}
+body{background:#050509;font-family:'Outfit',sans-serif;overscroll-behavior:none;-webkit-font-smoothing:antialiased;}
 #root{min-height:100vh;}
 select option{background:#0d1525;color:#fff;}
-textarea,input{font-family:'Inter',system-ui,sans-serif;}
+textarea,input{font-family:'Outfit',sans-serif;}
 ::-webkit-scrollbar{width:3px;height:3px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;}
@@ -26,28 +26,28 @@ textarea,input{font-family:'Inter',system-ui,sans-serif;}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
-<script type="text/babel" data-presets="react">
+<script type="text/babel" data-presets="react,env">
 
 // ── THEME ─────────────────────────────────────────────────────
-const C={bg:"#05070e",surf:"#090f1a",card:"#0d1525",card2:"#131e30",
-  b:"#60a5fa",r:"#f87171",g:"#34d399",a:"#fbbf24",p:"#a78bfa",pk:"#f472b6",
-  or:"#fb923c",w:"#ffffff",gr:"#94a3b8",dim:"#4a5568",bdr:"rgba(255,255,255,0.07)",
-  text:"#e2e8f0"};
-const FONT="'Inter',system-ui,sans-serif";
+const C={bg:"#050509",surf:"#09091a",card:"#0d0d1f",card2:"#111128",
+  b:"#4d9fff",r:"#ff6b6b",g:"#00ff88",a:"#ffd166",p:"#c77dff",pk:"#ff78c4",
+  or:"#ff9a3c",w:"#ffffff",gr:"#5555aa",dim:"#1a1a3a",bdr:"rgba(255,255,255,0.07)",
+  text:"#eeeeff",cyan:"#00e5ff",teal:"#00ffd0",lime:"#aaff00"};
+const FONT="'Outfit',sans-serif";
 const PIN="2232";
 const CLAUDE_KEY="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";
 const SB_URL="https://euogzfqkspppqdfprouq.supabase.co";
 const SB_KEY="sb_publishable_-omHtloS0Tbv4dZZEE1pwg_xsRTXiQy";
-const SB_ON=true;
+const SB_ON=false; // Set to true and add valid anon key to enable cloud sync
 
 // ── CAT COLORS ────────────────────────────────────────────────
 const CAT={
-  sleep:{c:"#475569",label:"Sleep"},spiritual:{c:"#fbbf24",label:"Prayer"},
-  voice:{c:"#60a5fa",label:"Voice"},athletic:{c:"#34d399",label:"Workout"},
-  recovery:{c:"#38bdf8",label:"Recovery"},work:{c:"#a78bfa",label:"Work"},
-  study:{c:"#f472b6",label:"Study"},food:{c:"#fb923c",label:"Food"},
-  grooming:{c:"#fbbf24",label:"Skincare"},finance:{c:"#34d399",label:"Finance"},
-  business:{c:"#f87171",label:"Business"},morning:{c:"#fbbf24",label:"Morning"}
+  sleep:{c:"#4d9fff",label:"Sleep"},spiritual:{c:"#ffd166",label:"Prayer"},
+  voice:{c:"#00e5ff",label:"Voice"},athletic:{c:"#00ff88",label:"Workout"},
+  recovery:{c:"#00ffd0",label:"Recovery"},work:{c:"#c77dff",label:"Work"},
+  study:{c:"#ff78c4",label:"Study"},food:{c:"#ff9a3c",label:"Food"},
+  grooming:{c:"#ffd166",label:"Skincare"},finance:{c:"#aaff00",label:"Finance"},
+  business:{c:"#ff6b6b",label:"Business"},morning:{c:"#ffd166",label:"Morning"}
 };
 
 // ── WEEK META ─────────────────────────────────────────────────
@@ -273,7 +273,7 @@ async function dbGet(k){if(!SB_ON)return null;try{const r=await fetch(SB_URL+"/r
 async function dbSet(k,v){if(!SB_ON)return;try{await fetch(SB_URL+"/rest/v1/life_os",{method:"POST",headers:{"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Content-Type":"application/json","Prefer":"resolution=merge-duplicates"},body:JSON.stringify({key:k,value:JSON.stringify(v)})});}catch(e){}}
 function useStore(key,init){
   const[v,sv]=React.useState(function(){const s=lsGet(key);if(s)try{return JSON.parse(s);}catch(e){}return init;});
-  React.useEffect(function(){dbGet(key).then(function(r){if(r)try{sv(JSON.parse(r));}catch(e){}}).catch(function(){});},[key]);
+  React.useEffect(function(){if(!SB_ON)return;dbGet(key).then(function(r){if(r)try{sv(JSON.parse(r));}catch(e){}}).catch(function(){});},[key]);
   const set=React.useCallback(function(val){sv(val);lsSet(key,val);dbSet(key,val);},[key]);
   return[v,set];
 }
@@ -301,39 +301,179 @@ function renderText(text){
 function Lock({onOk}){
   const[digits,setDigits]=React.useState([]);
   const[shake,setShake]=React.useState(false);
+  const[typed,setTyped]=React.useState("");
+  const inputRef=React.useRef(null);
+
+  function trySubmit(str){
+    if(str.length!==4)return;
+    if(str===PIN){setTimeout(()=>onOk(),120);}
+    else{setShake(true);setTimeout(()=>{setDigits([]);setTyped("");setShake(false);},600);}
+  }
   function press(d){
     if(digits.length>=4)return;
     const next=[...digits,d];setDigits(next);
-    if(next.length===4){if(next.join("")===PIN){setTimeout(()=>onOk(),120);}else{setShake(true);setTimeout(()=>{setDigits([]);setShake(false);},600);}}
+    if(next.length===4)trySubmit(next.join(""));
+  }
+  function handleTyped(e){
+    const val=e.target.value.replace(/\D/g,"").slice(0,4);
+    setTyped(val);
+    setDigits(val.split(""));
+    if(val.length===4)trySubmit(val);
   }
   return(
-    <div style={{background:`linear-gradient(160deg,${C.bg},#0a1428)`,minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:FONT}}>
-      <div style={{textAlign:"center",padding:"36px 20px",maxWidth:280,width:"100%"}}>
+    <div style={{background:`linear-gradient(160deg,${C.bg},#0a1428)`,minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:FONT}} onClick={()=>inputRef.current&&inputRef.current.focus()}>
+      <div style={{textAlign:"center",padding:"36px 20px",maxWidth:300,width:"100%"}}>
         <div style={{fontSize:40,marginBottom:12}}>🔒</div>
         <div style={{fontSize:26,fontWeight:800,color:C.w,letterSpacing:-1,marginBottom:2}}>Mohamed</div>
-        <div style={{fontSize:10,color:C.gr,marginBottom:32,letterSpacing:2,textTransform:"uppercase"}}>Life Operating System</div>
-        <div style={{display:"flex",gap:14,justifyContent:"center",marginBottom:36,transition:"transform .15s",transform:shake?"translateX(8px)":"none"}}>
+        <div style={{fontSize:10,color:C.gr,marginBottom:28,letterSpacing:2,textTransform:"uppercase"}}>Life Operating System</div>
+        {/* Hidden input to capture keyboard */}
+        <input ref={inputRef} type="password" inputMode="numeric" pattern="[0-9]*"
+          value={typed} onChange={handleTyped} autoFocus
+          style={{position:"absolute",opacity:0,width:1,height:1,top:0,left:0,pointerEvents:"none"}}/>
+        <div style={{display:"flex",gap:14,justifyContent:"center",marginBottom:8,transition:"transform .15s",transform:shake?"translateX(8px)":"none"}}>
           {[0,1,2,3].map(i=><div key={i} style={{width:16,height:16,borderRadius:"50%",background:digits[i]!==undefined?C.b:"transparent",border:`2px solid ${digits[i]!==undefined?C.b:C.bdr}`,transition:"all .15s"}}/>)}
         </div>
+        <div style={{fontSize:10,color:C.gr,marginBottom:24}}>Type PIN or tap buttons below</div>
+        {/* Visible PIN input for direct typing */}
+        <input type="password" inputMode="numeric" pattern="[0-9]*"
+          value={typed} onChange={handleTyped} placeholder="Enter PIN"
+          style={{...ip(C.b),textAlign:"center",fontSize:24,letterSpacing:12,marginBottom:20,fontWeight:700}}/>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
           {["1","2","3","4","5","6","7","8","9","","0","⌫"].map((k,i)=>
             k===""?<div key={i}/>:
-            <button key={i} onClick={()=>k==="⌫"?setDigits(d=>d.slice(0,-1)):press(k)}
-              style={{background:k==="⌫"?C.card:C.card2,border:`1px solid ${C.bdr}`,borderRadius:14,padding:"16px 8px",fontSize:k==="⌫"?18:22,fontWeight:700,color:C.w,cursor:"pointer",fontFamily:FONT}}>
+            <button key={i} onClick={()=>k==="⌫"?(setDigits(d=>d.slice(0,-1)),setTyped(t=>t.slice(0,-1))):press(k)}
+              style={{background:k==="⌫"?C.card:C.card2,border:`1px solid ${C.bdr}`,borderRadius:14,padding:"14px 8px",fontSize:k==="⌫"?18:22,fontWeight:700,color:C.w,cursor:"pointer",fontFamily:FONT}}>
               {k}
             </button>
           )}
         </div>
-        {shake&&<div style={{color:C.r,fontSize:12,marginTop:16}}>Incorrect PIN</div>}
+        {shake&&<div style={{color:C.r,fontSize:12,marginTop:16,fontWeight:600}}>Incorrect PIN</div>}
       </div>
     </div>
   );
 }
 
+// ── DEFAULT HOME NAV TILES ────────────────────────────────────────
+const DEFAULT_HOME_TILES=[
+  {id:"t1",dest:SC.week,icon:"📅",label:"Schedule",c:"#4d9fff"},
+  {id:"t2",dest:SC.subjects,icon:"📁",label:"Subjects",c:"#c77dff"},
+  {id:"t3",dest:SC.todo,icon:"✅",label:"To-Do",c:"#00ff88"},
+  {id:"t4",dest:SC.goals,icon:"🎯",label:"Goals",c:"#ffd166"},
+  {id:"t5",dest:SC.hard75,icon:"🔥",label:"75 Hard",c:"#ff6b6b"},
+  {id:"t6",dest:SC.chat,icon:"🤖",label:"AI Chat",c:"#ff78c4"},
+];
+
+const TILE_PRESETS=[
+  {dest:SC.week,icon:"📅",label:"Schedule",c:"#4d9fff"},
+  {dest:SC.subjects,icon:"📁",label:"Subjects",c:"#c77dff"},
+  {dest:SC.todo,icon:"✅",label:"To-Do",c:"#00ff88"},
+  {dest:SC.goals,icon:"🎯",label:"Goals",c:"#ffd166"},
+  {dest:SC.hard75,icon:"🔥",label:"75 Hard",c:"#ff6b6b"},
+  {dest:SC.chat,icon:"🤖",label:"AI Chat",c:"#ff78c4"},
+  {dest:"subject:islam",icon:"☾",label:"Islam",c:"#ffd166"},
+  {dest:"subject:arabic",icon:"ع",label:"Arabic",c:"#ffd166"},
+  {dest:"subject:vocab",icon:"📖",label:"Vocab",c:"#00e5ff"},
+  {dest:"subject:tech",icon:"🤖",label:"Tech",c:"#c77dff"},
+  {dest:"subject:business",icon:"💼",label:"Business",c:"#ff6b6b"},
+  {dest:"subject:history",icon:"◎",label:"History",c:"#ff6b6b"},
+  {dest:"subject:jpmc",icon:"💻",label:"JPMC",c:"#c77dff"},
+  {dest:"subject:chess",icon:"♟️",label:"Chess",c:"#5555aa"},
+  {dest:"subject:leetcode",icon:"🧩",label:"LeetCode",c:"#00ff88"},
+  {dest:"subject:workout",icon:"🏋️",label:"Workout",c:"#00ff88"},
+  {dest:"subject:boxing",icon:"🥊",label:"Boxing",c:"#ff6b6b"},
+  {dest:"subject:finance",icon:"📈",label:"Finance",c:"#aaff00"},
+  {dest:"subject:neuro",icon:"🧠",label:"Neuro",c:"#ff78c4"},
+  {dest:"subject:quran",icon:"📿",label:"Quran",c:"#ffd166"},
+  {dest:SC.metrics,icon:"📊",label:"Metrics",c:"#00ffd0"},
+];
+
+function HomeNavGrid({nav,subjects}){
+  const[tiles,setTiles]=useStore("home_tiles_v1",DEFAULT_HOME_TILES);
+  const[editing,setEditing]=React.useState(false);
+  const[editIdx,setEditIdx]=React.useState(null);
+
+  // Build full preset list including custom subjects
+  const allPresets=React.useMemo(function(){
+    const base=[...TILE_PRESETS];
+    subjects.forEach(function(s){
+      const dest="subject:"+s.id;
+      if(!base.find(function(p){return p.dest===dest;})){
+        base.push({dest:dest,icon:s.emoji,label:s.name.slice(0,8),c:s.color});
+      }
+    });
+    return base;
+  },[subjects]);
+
+  function pickPreset(tileIdx,preset){
+    const next=tiles.map(function(t,i){return i===tileIdx?{...t,dest:preset.dest,icon:preset.icon,label:preset.label,c:preset.c}:t;});
+    setTiles(next);
+    setEditIdx(null);
+  }
+
+  if(editing){
+    return(
+      <div style={{background:C.card,border:"1px solid "+C.bdr,borderRadius:14,padding:"13px 14px",marginBottom:12}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <div style={{fontSize:10,color:C.b,fontWeight:700,letterSpacing:1}}>CUSTOMIZE SHORTCUTS</div>
+          <button onClick={function(){setEditing(false);setEditIdx(null);}} style={{...sb(C.g),padding:"4px 11px",fontSize:10}}>✓ Done</button>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:editIdx!==null?12:0}}>
+          {tiles.map(function(t,i){
+            const isEdit=editIdx===i;
+            return(
+              <button key={t.id} onClick={function(){setEditIdx(isEdit?null:i);}}
+                style={{background:isEdit?t.c+"22":C.card2,border:"1.5px solid "+(isEdit?t.c:C.bdr),borderRadius:12,padding:"12px 6px",cursor:"pointer",textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center",gap:4,position:"relative"}}>
+                <span style={{fontSize:18}}>{t.icon}</span>
+                <span style={{fontSize:8,color:t.c,fontWeight:700}}>{t.label}</span>
+                <span style={{position:"absolute",top:3,right:4,fontSize:8,color:C.gr}}>✏️</span>
+              </button>
+            );
+          })}
+        </div>
+        {editIdx!==null&&(
+          <div>
+            <div style={{fontSize:9,color:C.gr,marginBottom:8}}>Pick a new destination for slot {editIdx+1}:</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:5,maxHeight:220,overflowY:"auto"}}>
+              {allPresets.map(function(p,pi){
+                return(
+                  <button key={pi} onClick={function(){pickPreset(editIdx,p);}}
+                    style={{background:C.bg,border:"1px solid "+p.c+"33",borderRadius:8,padding:"8px 4px",cursor:"pointer",textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+                    <span style={{fontSize:14}}>{p.icon}</span>
+                    <span style={{fontSize:7,color:p.c,fontWeight:700}}>{p.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return(
+    <div style={{marginBottom:12}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:5}}>
+        {tiles.map(function(t){
+          return(
+            <button key={t.id} onClick={function(){nav(t.dest);}}
+              style={{background:C.card,border:"1px solid "+t.c+"28",borderRadius:12,padding:"13px 6px",cursor:"pointer",textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center",gap:4,boxShadow:"0 0 16px "+t.c+"10"}}>
+              <span style={{fontSize:18}}>{t.icon}</span>
+              <span style={{fontSize:8,color:t.c,fontWeight:700}}>{t.label}</span>
+            </button>
+          );
+        })}
+      </div>
+      <button onClick={function(){setEditing(true);}} style={{background:"none",border:"none",color:C.dim,fontSize:9,cursor:"pointer",fontFamily:FONT,float:"right",padding:"2px 0"}}>✏️ customize</button>
+      <div style={{clear:"both"}}/>
+    </div>
+  );
+}
+
+
 // ══════════════════════════════════════════
 // HOME
 // ══════════════════════════════════════════
-function Home({nav,checks,schedule,todos,setTodos,hard75,setHard75,hard75Streak,setHard75Streak,affirmation,setAffirmation,metrics,setMetrics}){
+function Home({nav,checks,schedule,todos,setTodos,hard75,setHard75,hard75Streak,setHard75Streak,affirmation,setAffirmation,metrics,setMetrics,subjects}){
   const[iqI]=React.useState(()=>Math.floor(Math.random()*IQ.length));
   const[mqI]=React.useState(()=>Math.floor(Math.random()*MQ.length));
   const[editAff,setEditAff]=React.useState(false);
@@ -343,10 +483,10 @@ function Home({nav,checks,schedule,todos,setTodos,hard75,setHard75,hard75Streak,
   const ti=new Date().getDay()===0?6:new Date().getDay()-1;
   const tm=WM[ti];
   var _dt=(function(){if(!schedule[ti])return{done:0,total:0};var t=0,d=0;(schedule[ti].blocks||[]).forEach(function(b,bi){(b.items||[]).forEach(function(_,ii){t++;if(checks[ti+"-"+bi+"-"+ii])d++;});});return{done:d,total:t};})();var done=_dt.done;var total=_dt.total;
-  const todayTodos=(todos._day?.[WM[ti].name])||[];
+  const todayTodos=((todos._day&&todos._day[WM[ti].name]))||[];
   const allTodos=todos._all||[];
   const todayKey=new Date().toDateString();
-  const h75d=hard75.daily?.[todayKey]||{};
+  const h75d=(hard75.daily&&hard75.daily[todayKey])||{};
   const h75tasks=hard75.tasks||H75_DEFAULT;
   const h75done=h75tasks.filter((_,i)=>h75d[i]).length;
   const mets=metrics&&metrics.length>0?metrics:[{id:"water",emoji:"💧",label:"Water",value:"16 cups/day",color:C.b},{id:"streak",emoji:"🔥",label:"Streak",value:`${hard75Streak||0} days`,color:C.r},{id:"weight",emoji:"⚖️",label:"Weight",value:"140→165 lbs",color:C.g}];
@@ -407,15 +547,8 @@ function Home({nav,checks,schedule,todos,setTodos,hard75,setHard75,hard75Streak,
             <div style={{fontSize:8,color:C.gr}}>{done}/{total}</div>
           </div>
         </div>
-        {/* Nav */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:12}}>
-          {[{id:SC.week,icon:"📅",label:"Schedule",c:C.b},{id:SC.subjects,icon:"📁",label:"Subjects",c:C.p},{id:SC.todo,icon:"✅",label:"To-Do",c:C.g},{id:SC.goals,icon:"🎯",label:"Goals",c:C.a},{id:SC.hard75,icon:"🔥",label:"75 Hard",c:C.r},{id:SC.chat,icon:"🤖",label:"AI Chat",c:C.pk}].map(n=>(
-            <button key={n.id} onClick={()=>nav(n.id)} style={{background:C.card,border:`1px solid ${n.c}28`,borderRadius:12,padding:"13px 6px",cursor:"pointer",textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-              <span style={{fontSize:18}}>{n.icon}</span>
-              <span style={{fontSize:8,color:n.c,fontWeight:700}}>{n.label}</span>
-            </button>
-          ))}
-        </div>
+        {/* Nav — customizable shortcut tiles */}
+        <HomeNavGrid nav={nav} subjects={subjects}/>
         {/* Today To-Do */}
         <div style={cd(C.g,{marginBottom:12})}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}>
@@ -427,7 +560,7 @@ function Home({nav,checks,schedule,todos,setTodos,hard75,setHard75,hard75Streak,
             <button onClick={addTodo} style={{...sb(C.g),padding:"6px 13px",fontSize:14}}>+</button>
           </div>
           {todayTodos.length===0?<div style={{fontSize:11,color:C.gr,fontStyle:"italic"}}>No tasks for today ✓</div>:todayTodos.slice(0,5).map(t=>(
-            <div key={t.id} onClick={()=>toggleToday(t.id)} style={{display:"flex",alignItems:"center",gap:9,padding:"5px 0",borderTop:`1px solid ${C.bdr}`,cursor:"pointer",opacity:t.done?.5:1}}>
+            <div key={t.id} onClick={()=>toggleToday(t.id)} style={{display:"flex",alignItems:"center",gap:9,padding:"5px 0",borderTop:`1px solid ${C.bdr}`,cursor:"pointer",opacity:t.done?0.5:1}}>
               <div style={{width:14,height:14,borderRadius:3,border:`1.5px solid ${t.done?C.g:C.g+"44"}`,background:t.done?C.g:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
                 {t.done&&<span style={{color:C.bg,fontSize:8,fontWeight:900}}>✓</span>}
               </div>
@@ -749,7 +882,7 @@ function Day({dayIdx,checks,setChecks,schedule,setSchedule,nav,events,subjects})
           </div>
         )}
         {day.blocks.map((block,bi)=>{
-          const cc=CAT[block.cat]?.c||C.gr;
+          const cc=CAT[block.cat]&&CAT[block.cat].c||C.gr;
           const ck=`${dayIdx}-${bi}`;
           const isCol=collapsed[ck];
           const bDone=block.items.filter((_,ii)=>checks[`${dayIdx}-${bi}-${ii}`]).length;
@@ -815,11 +948,11 @@ function Day({dayIdx,checks,setChecks,schedule,setSchedule,nav,events,subjects})
                     {block.items.map((item,ii)=>{
                       const k=`${dayIdx}-${bi}-${ii}`;
                       const isDone=!!checks[k];
-                      const isEd=editItem?.bi===bi&&editItem?.ii===ii;
+                      const isEd=(editItem&&editItem.bi)===bi&&(editItem&&editItem.ii)===ii;
                       const isLabel=item.startsWith("──");
                       const isInd=item.startsWith("  ");
                       const isWater=item.includes("💧");
-                      const insertHere=addInsert?.bi===bi&&addInsert?.ii===ii;
+                      const insertHere=(addInsert&&addInsert.bi)===bi&&(addInsert&&addInsert.ii)===ii;
                       return(
                         <div key={ii}>
                           {insertHere&&(
@@ -831,7 +964,7 @@ function Day({dayIdx,checks,setChecks,schedule,setSchedule,nav,events,subjects})
                               </div>
                             </div>
                           )}
-                          <div style={{display:"flex",alignItems:"flex-start",gap:7,padding:"4px 0",paddingLeft:isInd?16:0,borderTop:`1px solid ${cc}${ii===0?"13":"09"}`,opacity:isDone?.35:1}}>
+                          <div style={{display:"flex",alignItems:"flex-start",gap:7,padding:"4px 0",paddingLeft:isInd?16:0,borderTop:`1px solid ${cc}${ii===0?"13":"09"}`,opacity:isDone?0.35:1}}>
                             {!isLabel&&<button onClick={()=>togChk(bi,ii)} style={{width:15,height:15,borderRadius:3,flexShrink:0,marginTop:2,border:`1.5px solid ${isDone?cc:cc+"55"}`,background:isDone?cc:"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
                               {isDone&&<span style={{color:C.bg,fontSize:8,fontWeight:900}}>✓</span>}
                             </button>}
@@ -848,7 +981,7 @@ function Day({dayIdx,checks,setChecks,schedule,setSchedule,nav,events,subjects})
                               ):(
                                 <div style={{display:"flex",alignItems:"center",gap:3}}>
                                   <div onClick={()=>editMode&&!isLabel&&(setEditItem({bi,ii}),setEditText(item))}
-                                    style={{flex:1,fontSize:isLabel?8:12,fontWeight:isLabel?700:400,letterSpacing:isLabel?1.2:0,textTransform:isLabel?"uppercase":"none",color:isWater?"#38bdf8":isLabel?cc:C.text,lineHeight:1.5,cursor:editMode&&!isLabel?"text":"default",textDecoration:isDone&&!isLabel?"line-through":"none",opacity:isLabel?.6:1}}>
+                                    style={{flex:1,fontSize:isLabel?8:12,fontWeight:isLabel?700:400,letterSpacing:isLabel?1.2:0,textTransform:isLabel?"uppercase":"none",color:isWater?"#38bdf8":isLabel?cc:C.text,lineHeight:1.5,cursor:editMode&&!isLabel?"text":"default",textDecoration:isDone&&!isLabel?"line-through":"none",opacity:isLabel?0.6:1}}>
                                     {renderText(item)}
                                   </div>
                                   {editMode&&!isLabel&&(
@@ -1009,7 +1142,7 @@ function RichEditor({content,onChange,color,fontSize,placeholder}){
     setShowLink(false);setLinkUrl("");setLinkText("");
   }
   function fixGrammar(){
-    const txt=edRef.current?.innerText||"";if(!txt.trim())return;
+    const txt=(edRef.current&&edRef.current.innerText)||"";if(!txt.trim())return;
     const key=window.__claudeKey||apiKey||"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";
     if(!key){alert("Set up AI key in the Chat tab first.");return;}
     fetch("https://api.anthropic.com/v1/messages",{method:"POST",
@@ -1021,7 +1154,7 @@ function RichEditor({content,onChange,color,fontSize,placeholder}){
     }).catch(()=>alert("Grammar fix failed — check AI key in Chat tab."));
   }
   function rewrite(){
-    const txt=edRef.current?.innerText||"";if(!txt.trim())return;
+    const txt=(edRef.current&&edRef.current.innerText)||"";if(!txt.trim())return;
     const key=window.__claudeKey||apiKey||"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";
     if(!key){alert("Set up AI key in the Chat tab first.");return;}
     fetch("https://api.anthropic.com/v1/messages",{method:"POST",
@@ -1106,7 +1239,7 @@ function SubjectPage({subjectId,nav,subjects}){
   function startQ(){if(DATA.length<2)return;setQScore({r:0,w:0});nextQ(DATA);setTab("quiz");}
   function nextQ(data){const co=data[Math.floor(Math.random()*data.length)];const wr=data.filter(d=>d.id!==co.id).sort(()=>Math.random()-.5).slice(0,3);setQQ({co,opts:[co,...wr].sort(()=>Math.random()-.5)});setQA(null);}
   function ansQ(opt){setQA(opt.id);setQScore(s=>opt.id===qQ.co.id?{...s,r:s.r+1}:{...s,w:s.w+1});}
-  function chkSp(){const w=vocab[si]?.word||"";const ok=spell.trim().toLowerCase()===w.toLowerCase();setSpR(ok?"✓ Correct!":"✗ Wrong — it's: "+w);}
+  function chkSp(){const w=(vocab[si]&&vocab[si].word)||"";const ok=spell.trim().toLowerCase()===w.toLowerCase();setSpR(ok?"✓ Correct!":"✗ Wrong — it's: "+w);}
   function delCard(id){isVocab?setVocab(vocab.filter(v=>v.id!==id)):setCards(cards.filter(c=>c.id!==id));}
 
   const TABS=isVocab?[["notes","Notes"],["add","Add Word"],["flash","Recall"],["quiz","Quiz"],["spell","Spelling"]]:isWorkout?[["notes","Notes"],["tracker","📊 Tracker"],["history","History"]]:[["notes","Notes"],["add","Add Q&A"],["flash","Recall"],["quiz","Quiz"]];
@@ -1154,7 +1287,7 @@ function SubjectPage({subjectId,nav,subjects}){
               <div style={{marginBottom:8}}>
                 <div style={{fontSize:9,color:C.gr,marginBottom:5}}>Load template:</div>
                 <div style={{display:"flex",gap:5,overflowX:"auto",paddingBottom:3}}>
-                  {Object.keys(J_TPLS).map(t=><button key={t} onClick={()=>{if(!page?.content||page.content.trim()===''){updContent(J_TPLS[t]);}else if(window.confirm('Replace content with this template?')){updContent(J_TPLS[t]);}}} style={{background:C.card,border:`1px solid ${c}33`,borderRadius:7,padding:"4px 9px",fontSize:9,color:c,cursor:"pointer",fontFamily:FONT,whiteSpace:"nowrap"}}>{t}</button>)}
+                  {Object.keys(J_TPLS).map(t=><button key={t} onClick={()=>{if(!(page&&page.content)||page.content.trim()===''){updContent(J_TPLS[t]);}else if(window.confirm('Replace content with this template?')){updContent(J_TPLS[t]);}}} style={{background:C.card,border:`1px solid ${c}33`,borderRadius:7,padding:"4px 9px",fontSize:9,color:c,cursor:"pointer",fontFamily:FONT,whiteSpace:"nowrap"}}>{t}</button>)}
                 </div>
               </div>
             )}
@@ -1162,7 +1295,7 @@ function SubjectPage({subjectId,nav,subjects}){
               <span style={{fontSize:9,color:C.gr}}>Size:</span>
               {[11,13,15,18,22].map(f=><button key={f} onClick={()=>setFontSize(f)} style={{background:fontSize===f?`${c}20`:"transparent",border:`1px solid ${fontSize===f?c:C.bdr}`,borderRadius:5,padding:"1px 5px",fontSize:9,color:fontSize===f?c:C.gr,cursor:"pointer",fontFamily:FONT}}>{f}</button>)}
             </div>
-            <RichEditor content={page?.content||""} onChange={updContent} color={c} fontSize={fontSize} placeholder={`${subj.name} notes...`}/>
+            <RichEditor content={(page&&page.content)||""} onChange={updContent} color={c} fontSize={fontSize} placeholder={`${subj.name} notes...`}/>
           </div>
         )}
         {tab==="add"&&!isVocab&&!isWorkout&&(
@@ -1291,7 +1424,7 @@ function Todo({todos,setTodos}){
   const[noteText,setNoteText]=React.useState(todos._note||"");
   const DAYS=WM.map(w=>w.name);
   const allTodos=todos._all||[];
-  const dayTodos=(todos._day?.[selDay])||[];
+  const dayTodos=((todos._day&&todos._day[selDay]))||[];
   const showList=tab==="all"?allTodos:dayTodos;
 
   function add(){
@@ -1328,7 +1461,7 @@ function Todo({todos,setTodos}){
             <button onClick={add} style={{...sb(C.g),padding:"8px 13px",fontSize:14}}>+</button>
           </div>
           {showList.length===0?<div style={{color:C.gr,fontSize:12,fontStyle:"italic",textAlign:"center",padding:"30px 0"}}>No tasks here.</div>:showList.map(t=>(
-            <div key={t.id} style={{display:"flex",alignItems:"center",gap:9,padding:"9px 12px",background:C.card,border:`1px solid ${C.bdr}`,borderRadius:10,marginBottom:7,opacity:t.done?.45:1}}>
+            <div key={t.id} style={{display:"flex",alignItems:"center",gap:9,padding:"9px 12px",background:C.card,border:`1px solid ${C.bdr}`,borderRadius:10,marginBottom:7,opacity:t.done?0.45:1}}>
               <button onClick={()=>toggle(t.id,tab==="day")} style={{width:16,height:16,borderRadius:4,flexShrink:0,border:`1.5px solid ${t.done?C.g:C.dim}`,background:t.done?C.g:"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{t.done&&<span style={{color:C.bg,fontSize:10,fontWeight:900}}>✓</span>}</button>
               <span style={{flex:1,fontSize:12,color:C.text,textDecoration:t.done?"line-through":"none"}}>{t.text}</span>
               {tab==="all"&&<button onClick={()=>copyToDay(t)} style={{...sb(C.gr,true),padding:"2px 7px",fontSize:9,flexShrink:0}}>→{selDay.slice(0,3)}</button>}
@@ -1611,232 +1744,90 @@ function WorkoutTracker({tracker,setTracker,color}){
 // VISION BOARD — free drag, resize, overlap
 // ══════════════════════════════════════════
 function VisionBoard({vBoard,setVBoard}){
-  const[sel,setSel]=React.useState(null);
-  const[drag,setDrag]=React.useState(null);
-  const[resize,setResize]=React.useState(null);
-  const boardRef=React.useRef(null);
   const fileRef=React.useRef(null);
+  const[sel,setSel]=React.useState(null);
 
-  // Compress image to base64 max 700px, quality 0.65
   function compress(file,cb){
-    const reader=new FileReader();
-    reader.onload=function(ev){
+    const r=new FileReader();
+    r.onload=function(ev){
       const img=new Image();
       img.onload=function(){
-        const MAX=700;
-        let w=img.width,h=img.height;
+        const MAX=700;let w=img.width,h=img.height;
         if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
-        const canvas=document.createElement("canvas");
-        canvas.width=w;canvas.height=h;
-        canvas.getContext("2d").drawImage(img,0,0,w,h);
-        cb(canvas.toDataURL("image/jpeg",0.65),w,h);
+        const c=document.createElement("canvas");c.width=w;c.height=h;
+        c.getContext("2d").drawImage(img,0,0,w,h);
+        cb(c.toDataURL("image/jpeg",0.65));
       };
       img.src=ev.target.result;
     };
-    reader.readAsDataURL(file);
+    r.readAsDataURL(file);
   }
 
   function addImages(e){
-    const files=Array.from(e.target.files||[]);
-    files.forEach(function(file,fi){
-      compress(file,function(src,iw,ih){
-        const aspect=ih/iw;
-        const w=180;const h=Math.round(w*aspect);
-        const board=boardRef.current;
-        const bw=board?board.offsetWidth:400;
-        const bh=board?board.offsetHeight:500;
-        const newItem={
-          id:Date.now()+fi,
-          src:src,
-          x:Math.round(20+Math.random()*(bw-w-40)),
-          y:Math.round(20+Math.random()*(bh-h-40)),
-          w:w,h:h,
-          z:vBoard.length+fi+1,
-          rot:Math.round((Math.random()-0.5)*12)
-        };
-        setVBoard(function(prev){return [...prev,newItem];});
+    Array.from(e.target.files||[]).forEach(function(file){
+      compress(file,function(src){
+        setVBoard(function(prev){
+          return [...prev,{id:Date.now()+Math.random(),src:src,label:""}];
+        });
       });
     });
     e.target.value="";
   }
 
-  function getXY(e){
-    if(e.touches&&e.touches.length>0)return{x:e.touches[0].clientX,y:e.touches[0].clientY};
-    return{x:e.clientX,y:e.clientY};
-  }
+  function del(id){setVBoard(function(p){return p.filter(function(x){return x.id!==id;});});setSel(null);}
+  function setLabel(id,label){setVBoard(function(p){return p.map(function(x){return x.id===id?{...x,label:label}:x;});});}
 
-  function onBoardMouseMove(e){
-    if(drag){
-      var _xy=getXY(e);var x=_xy.x;var y=_xy.y;
-      const dx=x-drag.sx,dy=y-drag.sy;
-      setVBoard(function(prev){return prev.map(function(it){
-        return it.id===drag.id?{...it,x:Math.max(0,drag.ox+dx),y:Math.max(0,drag.oy+dy)}:it;
-      });});
-    }
-    if(resize){
-      var _xy=getXY(e);var x=_xy.x;var y=_xy.y;
-      const dx=x-resize.sx,dy=y-resize.sy;
-      setVBoard(function(prev){return prev.map(function(it){
-        if(it.id!==resize.id)return it;
-        return{...it,w:Math.max(80,resize.ow+dx),h:Math.max(60,resize.oh+dy)};
-      });});
-    }
-  }
-
-  function onBoardMouseUp(){setDrag(null);setResize(null);}
-
-  function startDrag(e,id){
-    e.stopPropagation();e.preventDefault();
-    var _xy=getXY(e);var x=_xy.x;var y=_xy.y;
-    const it=vBoard.find(function(v){return v.id===id;});
-    if(!it)return;
-    setSel(id);
-    // Bring to front
-    const maxZ=vBoard.reduce(function(m,v){return Math.max(m,v.z||1);},1);
-    setVBoard(function(prev){return prev.map(function(v){return v.id===id?{...v,z:maxZ+1}:v;});});
-    setDrag({id,sx:x,sy:y,ox:it.x,oy:it.y});
-  }
-
-  function startResize(e,id){
-    e.stopPropagation();e.preventDefault();
-    var _xy=getXY(e);var x=_xy.x;var y=_xy.y;
-    const it=vBoard.find(function(v){return v.id===id;});
-    if(!it)return;
-    setResize({id,sx:x,sy:y,ow:it.w,oh:it.h});
-  }
-
-  function rotate(id,dir){
-    setVBoard(function(prev){return prev.map(function(it){
-      return it.id===id?{...it,rot:(it.rot||0)+dir*5}:it;
-    });});
-  }
-
-  function deleteImg(id){
-    setSel(null);
-    setVBoard(function(prev){return prev.filter(function(it){return it.id!==id;});});
-  }
-
-  function bringForward(id){
-    const maxZ=vBoard.reduce(function(m,v){return Math.max(m,v.z||1);},1);
-    setVBoard(function(prev){return prev.map(function(it){return it.id===id?{...it,z:maxZ+1}:it;});});
-  }
-
-  function sendBack(id){
-    setVBoard(function(prev){return prev.map(function(it){return it.id===id?{...it,z:0}:it;});});
-  }
+  const HEIGHTS=[140,90,90,90,140,90,90,90,140,90,90,90];
 
   return(
     <div style={{paddingBottom:20}}>
-      {/* Toolbar */}
-      <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:10,flexWrap:"wrap"}}>
+      <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:12,flexWrap:"wrap"}}>
         <button onClick={function(){fileRef.current&&fileRef.current.click();}}
-          style={{...sb(C.b),padding:"7px 16px",fontSize:12}}>
-          📁 Add Photos
-        </button>
-        <input ref={fileRef} type="file" accept="image/*" multiple onChange={addImages}
-          style={{display:"none"}}/>
-        {sel&&(
-          <>
-            <button onClick={function(){rotate(sel,-1);}} style={{...sb(C.gr,true),padding:"6px 10px",fontSize:12}}>↺</button>
-            <button onClick={function(){rotate(sel,1);}} style={{...sb(C.gr,true),padding:"6px 10px",fontSize:12}}>↻</button>
-            <button onClick={function(){bringForward(sel);}} style={{...sb(C.p,true),padding:"6px 10px",fontSize:10}}>↑ Front</button>
-            <button onClick={function(){sendBack(sel);}} style={{...sb(C.p,true),padding:"6px 10px",fontSize:10}}>↓ Back</button>
-            <button onClick={function(){deleteImg(sel);}} style={{...sb(C.r,true),padding:"6px 10px",fontSize:10}}>🗑</button>
-            <span style={{fontSize:9,color:C.gr}}>Drag to move · corner to resize</span>
-          </>
-        )}
-        {!sel&&vBoard.length===0&&(
-          <span style={{fontSize:11,color:C.gr}}>Tap "Add Photos" to pick images from your camera roll or files</span>
-        )}
-        {!sel&&vBoard.length>0&&(
-          <span style={{fontSize:9,color:C.gr}}>Tap an image to select · drag to move · drag corner to resize</span>
-        )}
+          style={{...sb(C.b),padding:"7px 16px",fontSize:12}}>📁 Add Photos</button>
+        <input ref={fileRef} type="file" accept="image/*" multiple onChange={addImages} style={{display:"none"}}/>
+        {vBoard.length>0&&<button onClick={function(){if(window.confirm("Clear vision board?")){setVBoard([]);setSel(null);}}}
+          style={{...sb(C.r,true),padding:"6px 12px",fontSize:10}}>Clear All</button>}
+        <span style={{fontSize:10,color:C.gr}}>
+          {vBoard.length===0?"Tap Add Photos to build your vision board":"Tap any image to select · tap × to remove"}
+        </span>
       </div>
-
-      {/* Board canvas */}
-      <div
-        ref={boardRef}
-        onClick={function(){setSel(null);}}
-        onMouseMove={onBoardMouseMove}
-        onMouseUp={onBoardMouseUp}
-        onMouseLeave={onBoardMouseUp}
-        onTouchMove={onBoardMouseMove}
-        onTouchEnd={onBoardMouseUp}
-        style={{
-          position:"relative",width:"100%",height:520,
-          background:"#08090f",
-          border:"2px dashed "+(vBoard.length===0?C.bdr:"transparent"),
-          borderRadius:16,overflow:"hidden",
-          backgroundImage:"radial-gradient(circle at 20% 30%, #0d1230 0%, transparent 60%), radial-gradient(circle at 80% 70%, #120d20 0%, transparent 60%)"
-        }}>
-        {vBoard.length===0&&(
-          <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:10}}>
-            <div style={{fontSize:40}}>🌟</div>
-            <div style={{fontSize:14,color:C.gr,fontWeight:600}}>Your Vision Board</div>
-            <div style={{fontSize:11,color:C.dim,textAlign:"center",maxWidth:220,lineHeight:1.5}}>Add photos from your files. Drag them around. Overlap them. Make it yours.</div>
-            <button onClick={function(){fileRef.current&&fileRef.current.click();}} style={{...sb(C.b),padding:"8px 20px",marginTop:8}}>📁 Add Photos</button>
-          </div>
-        )}
-        {[...vBoard].sort(function(a,b){return(a.z||1)-(b.z||1);}).map(function(it){
-          const isSel=sel===it.id;
-          return(
-            <div key={it.id}
-              onMouseDown={function(e){startDrag(e,it.id);}}
-              onTouchStart={function(e){startDrag(e,it.id);}}
-              onClick={function(e){e.stopPropagation();setSel(it.id);}}
-              style={{
-                position:"absolute",
-                left:it.x,top:it.y,
-                width:it.w,height:it.h,
-                transform:"rotate("+(it.rot||0)+"deg)",
-                zIndex:it.z||1,
-                cursor:drag&&drag.id===it.id?"grabbing":"grab",
-                boxShadow:isSel?"0 0 0 2px "+C.b+", 0 8px 32px rgba(0,0,0,0.6)":"0 4px 20px rgba(0,0,0,0.5)",
-                borderRadius:4,
-                userSelect:"none",
-                WebkitUserSelect:"none",
-                outline:"none"
-              }}>
-              <img
-                src={it.src}
-                draggable={false}
-                style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:4,display:"block",pointerEvents:"none"}}
-                alt=""
-              />
-              {/* Resize handle — bottom right corner */}
-              <div
-                onMouseDown={function(e){startResize(e,it.id);}}
-                onTouchStart={function(e){startResize(e,it.id);}}
-                style={{
-                  position:"absolute",bottom:-4,right:-4,
-                  width:14,height:14,
-                  background:isSel?C.b:C.gr,
-                  borderRadius:3,cursor:"se-resize",
-                  opacity:isSel?1:0,
-                  transition:"opacity .15s",
-                  border:"2px solid "+C.bg,
-                  zIndex:10
-                }}
-              />
-              {/* Selection indicator */}
-              {isSel&&(
-                <div style={{position:"absolute",inset:-1,borderRadius:5,border:"2px solid "+C.b,pointerEvents:"none"}}/>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {vBoard.length>0&&(
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8}}>
-          <div style={{fontSize:9,color:C.dim}}>{vBoard.length} image{vBoard.length!==1?"s":""}</div>
-          <button onClick={function(){if(window.confirm("Clear the entire vision board?")){setVBoard([]);setSel(null);}}}
-            style={{...sb(C.r,true),padding:"3px 9px",fontSize:9}}>Clear all</button>
+      {vBoard.length===0?(
+        <div style={{height:300,background:"#08090f",borderRadius:16,border:"2px dashed "+C.bdr,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12}}>
+          <div style={{fontSize:48}}>🌟</div>
+          <div style={{fontSize:16,color:C.gr,fontWeight:600}}>Your Vision Board</div>
+          <div style={{fontSize:12,color:C.dim,textAlign:"center",maxWidth:240,lineHeight:1.6}}>Add photos from your camera roll or files. Build what you're working toward.</div>
+          <button onClick={function(){fileRef.current&&fileRef.current.click();}} style={{...sb(C.b),padding:"9px 22px",marginTop:4}}>📁 Add Photos</button>
+        </div>
+      ):(
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
+          {vBoard.map(function(item,i){
+            const isSel=sel===item.id;
+            return(
+              <div key={item.id} style={{position:"relative",height:HEIGHTS[i%12]||90,borderRadius:10,overflow:"hidden",border:"2px solid "+(isSel?C.b:"transparent"),cursor:"pointer",transition:"border-color .15s"}}
+                onClick={function(){setSel(isSel?null:item.id);}}>
+                <img src={item.src} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} alt="" draggable={false}/>
+                {isSel&&(
+                  <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.45)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:7}}>
+                    <button onClick={function(e){e.stopPropagation();del(item.id);}}
+                      style={{background:C.r,border:"none",borderRadius:20,color:C.w,fontSize:11,fontWeight:700,padding:"4px 12px",cursor:"pointer"}}>🗑 Remove</button>
+                    <input value={item.label||""} onChange={function(e){e.stopPropagation();setLabel(item.id,e.target.value);}}
+                      onClick={function(e){e.stopPropagation();}}
+                      placeholder="Add label..."
+                      style={{...ip(C.b),fontSize:10,padding:"4px 8px",textAlign:"center",width:"80%"}}/>
+                  </div>
+                )}
+                {item.label&&!isSel&&(
+                  <div style={{position:"absolute",bottom:0,left:0,right:0,background:"rgba(0,0,0,0.6)",color:C.w,fontSize:9,padding:"3px 6px",textAlign:"center",fontWeight:600}}>{item.label}</div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
+
 
 
 
@@ -1960,7 +1951,7 @@ function Goals({goals,setGoals}){
 function Hard75({hard75,setHard75,hard75Streak,setHard75Streak}){
   const tasks=hard75.tasks||H75_DEFAULT;
   const todayKey=new Date().toDateString();
-  const todayData=hard75.daily?.[todayKey]||{};
+  const todayData=(hard75.daily&&hard75.daily[todayKey])||{};
   const[editTasks,setEditTasks]=React.useState(false);
   const[tasksText,setTasksText]=React.useState(tasks.join("\n"));
   const done=tasks.filter((_,i)=>todayData[i]).length;
@@ -2002,7 +1993,7 @@ function Hard75({hard75,setHard75,hard75Streak,setHard75Streak}){
           </div>
         )}
         {tasks.map((task,i)=>(
-          <div key={i} onClick={()=>toggle(i)} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:C.card,border:`1px solid ${todayData[i]?C.r+"44":C.bdr}`,borderRadius:10,marginBottom:7,cursor:"pointer",opacity:todayData[i]?.7:1}}>
+          <div key={i} onClick={()=>toggle(i)} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:C.card,border:`1px solid ${todayData[i]?C.r+"44":C.bdr}`,borderRadius:10,marginBottom:7,cursor:"pointer",opacity:todayData[i]?0.7:1}}>
             <div style={{width:20,height:20,borderRadius:5,flexShrink:0,border:`2px solid ${todayData[i]?C.r:C.dim}`,background:todayData[i]?C.r:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>{todayData[i]&&<span style={{color:C.bg,fontSize:12,fontWeight:900}}>✓</span>}</div>
             <span style={{fontSize:12,color:C.text,textDecoration:todayData[i]?"line-through":"none"}}>{task}</span>
           </div>
@@ -2623,10 +2614,10 @@ function NavBar({screen,nav,chatOpen,setChatOpen}){
     {id:SC.home,icon:"🏠",label:"Home",c:C.b},
     {id:SC.week,icon:"📅",label:"Cal",c:C.g},
     {id:SC.subjects,icon:"📁",label:"Study",c:C.p},
+    {id:SC.todo,icon:"✅",label:"To-Do",c:C.g},
     {id:SC.goals,icon:"🎯",label:"Goals",c:C.a},
-    {id:SC.metrics,icon:"📊",label:"Metrics",c:C.g},
   ];
-  function isA(id){return screen===id||(screen===SC.day&&id===SC.week)||(screen===SC.subject&&id===SC.subjects)||(screen===SC.hard75&&id===SC.home)||(screen===SC.chat&&id===SC.home);}
+  function isA(id){return screen===id||(screen===SC.day&&id===SC.week)||(screen===SC.subject&&id===SC.subjects)||(screen===SC.hard75&&id===SC.home)||(screen===SC.chat&&id===SC.home)||(screen===SC.metrics&&id===SC.home);}
   return(
     <div style={{position:"fixed",bottom:0,left:0,right:0,background:C.surf,borderTop:"1px solid "+C.bdr,display:"flex",zIndex:100}}>
       {ITEMS.map(function(item){var on=isA(item.id);return(
@@ -2680,7 +2671,7 @@ function App(){
   const hideNav=screen===SC.subject;
   return(
     <div style={{background:C.bg,minHeight:"100vh",paddingBottom:hideNav?0:58}}>
-      {screen===SC.home&&<Home nav={nav} checks={checks} schedule={schedData} todos={todos} setTodos={setTodos} hard75={hard75} setHard75={setHard75} hard75Streak={hard75Streak} setHard75Streak={setHard75Streak} affirmation={affirmation} setAffirmation={setAffirmation} metrics={metrics} setMetrics={setMetrics}/>}
+      {screen===SC.home&&<Home nav={nav} checks={checks} schedule={schedData} todos={todos} setTodos={setTodos} hard75={hard75} setHard75={setHard75} hard75Streak={hard75Streak} setHard75Streak={setHard75Streak} affirmation={affirmation} setAffirmation={setAffirmation} metrics={metrics} setMetrics={setMetrics} subjects={subjects}/>}
       {screen===SC.week&&<Week onDayClick={(i)=>{setDayIdx(i);setScreen(SC.day);}} checks={checks} schedule={schedData} events={events} setEvents={setEvents}/>}
       {screen===SC.day&&dayIdx!==null&&<Day dayIdx={dayIdx} checks={checks} setChecks={setChecks} schedule={schedData} setSchedule={setSchedule} nav={nav} events={events} subjects={subjects}/>}
       {screen===SC.subjects&&<Subjects nav={nav} subjects={subjects} setSubjects={setSubjects}/>}

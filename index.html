@@ -342,7 +342,7 @@ function Home({nav,checks,schedule,todos,setTodos,hard75,setHard75,hard75Streak,
   const[editMetrics,setEditMetrics]=React.useState(false);
   const ti=new Date().getDay()===0?6:new Date().getDay()-1;
   const tm=WM[ti];
-  const{done,total}=(()=>{if(!schedule[ti])return{done:0,total:0};let t=0,d=0;schedule[ti].blocks.forEach((b,bi)=>b.items.forEach((_,ii)=>{t++;if(checks[`${ti}-${bi}-${ii}`])d++;}));return{done:d,total:t};})();
+  var _dt=(function(){if(!schedule[ti])return{done:0,total:0};var t=0,d=0;(schedule[ti].blocks||[]).forEach(function(b,bi){(b.items||[]).forEach(function(_,ii){t++;if(checks[ti+"-"+bi+"-"+ii])d++;});});return{done:d,total:t};})();var done=_dt.done;var total=_dt.total;
   const todayTodos=(todos._day?.[WM[ti].name])||[];
   const allTodos=todos._all||[];
   const todayKey=new Date().toDateString();
@@ -687,7 +687,7 @@ function Day({dayIdx,checks,setChecks,schedule,setSchedule,nav,events,subjects})
 
   const day=schedule[dayIdx];const meta=WM[dayIdx];
   if(!day||!meta)return null;
-  const{done,total}=(()=>{let t=0,d=0;day.blocks.forEach((b,bi)=>b.items.forEach((_,ii)=>{t++;if(checks[`${dayIdx}-${bi}-${ii}`])d++;}));return{done:d,total:t};})();
+  var _dt2=(function(){var t=0,d=0;(day.blocks||[]).forEach(function(b,bi){(b.items||[]).forEach(function(_,ii){t++;if(checks[dayIdx+"-"+bi+"-"+ii])d++;});});return{done:d,total:t};})();var done=_dt2.done;var total=_dt2.total;
   const dayEvs=events[dayIdx]||[];
   const upd=(fn)=>setSchedule(schedule.map((d,di)=>di!==dayIdx?d:{...d,blocks:fn(d.blocks)}));
 
@@ -1667,14 +1667,14 @@ function VisionBoard({vBoard,setVBoard}){
 
   function onBoardMouseMove(e){
     if(drag){
-      const{x,y}=getXY(e);
+      var _xy=getXY(e);var x=_xy.x;var y=_xy.y;
       const dx=x-drag.sx,dy=y-drag.sy;
       setVBoard(function(prev){return prev.map(function(it){
         return it.id===drag.id?{...it,x:Math.max(0,drag.ox+dx),y:Math.max(0,drag.oy+dy)}:it;
       });});
     }
     if(resize){
-      const{x,y}=getXY(e);
+      var _xy=getXY(e);var x=_xy.x;var y=_xy.y;
       const dx=x-resize.sx,dy=y-resize.sy;
       setVBoard(function(prev){return prev.map(function(it){
         if(it.id!==resize.id)return it;
@@ -1687,7 +1687,7 @@ function VisionBoard({vBoard,setVBoard}){
 
   function startDrag(e,id){
     e.stopPropagation();e.preventDefault();
-    const{x,y}=getXY(e);
+    var _xy=getXY(e);var x=_xy.x;var y=_xy.y;
     const it=vBoard.find(function(v){return v.id===id;});
     if(!it)return;
     setSel(id);
@@ -1699,7 +1699,7 @@ function VisionBoard({vBoard,setVBoard}){
 
   function startResize(e,id){
     e.stopPropagation();e.preventDefault();
-    const{x,y}=getXY(e);
+    var _xy=getXY(e);var x=_xy.x;var y=_xy.y;
     const it=vBoard.find(function(v){return v.id===id;});
     if(!it)return;
     setResize({id,sx:x,sy:y,ow:it.w,oh:it.h});
@@ -1845,71 +1845,98 @@ function VisionBoard({vBoard,setVBoard}){
 // ══════════════════════════════════════════
 function Goals({goals,setGoals}){
   const[tab,setTab]=React.useState("vision");
-  const[newG,setNewG]=React.useState("");const[cat,setCat]=React.useState("fitness");
+  const[newG,setNewG]=React.useState("");
+  const[cat,setCat]=React.useState("fitness");
   const[dua,setDua]=useStore("ultimate_dua","");
   const[vBoard,setVBoard]=useStore("vboard_v1",[]);
-  const CATS=[["fitness","💪 Fitness","#34d399"],["spiritual","🕌 Spiritual","#fbbf24"],["career","💻 Career","#a78bfa"],["business","💼 Business","#f87171"],["social","👥 Social","#60a5fa"],["personal","🧠 Personal","#f472b6"],["health","🏃 Health","#38bdf8"],["financial","💰 Financial","#34d399"]];
-  const GOAL_TEMPLATE="What: \nWhy (deep reason): \nHow (3 concrete steps):\n1.\n2.\n3.\nDeadline: \nMeasure of success: ";
 
-  function add(){if(!newG.trim())return;setGoals([{id:Date.now(),text:newG.trim(),cat,done:false,created:new Date().toLocaleDateString()},...goals]);setNewG("");}
-  function toggle(id){setGoals(goals.map(g=>g.id===id?{...g,done:!g.done}:g));}
-  function del(id){setGoals(goals.filter(g=>g.id!==id));}
-  function setVImg(i,url){const nv=[...vBoard];nv[i]=url;setVBoard(nv);}
+  const CATS=[
+    ["fitness","💪 Fitness","#34d399"],
+    ["spiritual","🕌 Spiritual","#fbbf24"],
+    ["career","💻 Career","#a78bfa"],
+    ["business","💼 Business","#f87171"],
+    ["social","👥 Social","#60a5fa"],
+    ["personal","🧠 Personal","#f472b6"],
+    ["health","🏃 Health","#38bdf8"],
+    ["financial","💰 Financial","#34d399"]
+  ];
+  const TPL="What: \nWhy (deep reason): \nHow (3 concrete steps):\n1.\n2.\n3.\nDeadline: \nMeasure of success: ";
+
+  function addGoal(){
+    if(!newG.trim())return;
+    var g={id:Date.now(),text:newG.trim(),cat:cat,done:false,created:new Date().toLocaleDateString()};
+    setGoals([g].concat(goals));
+    setNewG("");
+  }
+  function toggleGoal(id){
+    setGoals(goals.map(function(g){return g.id===id?{...g,done:!g.done}:g;}));
+  }
+  function delGoal(id){
+    setGoals(goals.filter(function(g){return g.id!==id;}));
+  }
 
   return(
     <div style={{background:C.bg,minHeight:"100vh",fontFamily:FONT,paddingBottom:80}}>
-      {/* STICKY HEADER */}
       <div style={{background:C.surf,borderBottom:"1px solid "+C.bdr,padding:"13px 14px",position:"sticky",top:0,zIndex:10}}>
         <div style={{fontSize:9,letterSpacing:2,textTransform:"uppercase",color:C.gr,marginBottom:8}}>Vision & Goals</div>
         <div style={{display:"flex",gap:6}}>
-          {[["vision","🌟 Vision"],["goals","🎯 Goals"],["dua","🤲 Dua"]].map(function(t){
-            return React.createElement("button",{
-              key:t[0],
-              onClick:function(){setTab(t[0]);},
-              style:{...sb(tab===t[0]?C.a:C.gr,tab!==t[0]),padding:"7px 16px",fontSize:11,flexShrink:0}
-            },t[1]);
-          })}
+          <button onClick={function(){setTab("vision");}} style={{...sb(tab==="vision"?C.a:C.gr,tab!=="vision"),padding:"7px 16px",fontSize:11,flexShrink:0}}>🌟 Vision</button>
+          <button onClick={function(){setTab("goals");}} style={{...sb(tab==="goals"?C.a:C.gr,tab!=="goals"),padding:"7px 16px",fontSize:11,flexShrink:0}}>🎯 Goals</button>
+          <button onClick={function(){setTab("dua");}} style={{...sb(tab==="dua"?C.a:C.gr,tab!=="dua"),padding:"7px 16px",fontSize:11,flexShrink:0}}>🤲 Dua</button>
         </div>
       </div>
 
       <div style={{padding:"14px 14px 0"}}>
-        {tab==="vision"&&React.createElement(VisionBoard,{vBoard:vBoard,setVBoard:setVBoard})}
+
+        {tab==="vision"&&<VisionBoard vBoard={vBoard} setVBoard={setVBoard}/>}
 
         {tab==="goals"&&(
           <div>
             <div style={{marginBottom:12}}>
               <select value={cat} onChange={function(e){setCat(e.target.value);}} style={{...ip(C.a),marginBottom:8}}>
-                {CATS.map(function(c2){return <option key={c2[0]} value={c2[0]}>{c2[1]}</option>;})}
+                {CATS.map(function(row){return <option key={row[0]} value={row[0]}>{row[1]}</option>;})}
               </select>
               <div style={{display:"flex",gap:7,marginBottom:8}}>
-                <input value={newG} onChange={function(e){setNewG(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")add();}} placeholder="Add a goal..." style={{...ip(C.a),flex:1}} spellCheck={true}/>
-                <button onClick={add} style={{...sb(C.a),padding:"8px 14px",fontSize:15}}>+</button>
+                <input value={newG} onChange={function(e){setNewG(e.target.value);}}
+                  onKeyDown={function(e){if(e.key==="Enter")addGoal();}}
+                  placeholder="Add a goal..." style={{...ip(C.a),flex:1}} spellCheck={true}/>
+                <button onClick={addGoal} style={{...sb(C.a),padding:"8px 14px",fontSize:15}}>+</button>
               </div>
-              <button onClick={function(){setNewG(GOAL_TEMPLATE);}} style={{...sb(C.gr,true),padding:"5px 12px",fontSize:10}}>📋 Template</button>
+              <button onClick={function(){setNewG(TPL);}} style={{...sb(C.gr,true),padding:"5px 12px",fontSize:10}}>📋 Template</button>
             </div>
-            {goals.length===0&&<div style={{textAlign:"center",padding:"40px 0",color:C.gr,fontSize:12}}>No goals yet. Add your first above.</div>}
-            {CATS.map(function(cat2){
-              var cg=goals.filter(function(g){return g.cat===cat2[0];});
-              if(cg.length===0)return null;
+            {goals.length===0&&(
+              <div style={{textAlign:"center",padding:"40px 0",color:C.gr,fontSize:12}}>No goals yet. Add your first above.</div>
+            )}
+            {CATS.map(function(row){
+              var catId=row[0];var catLabel=row[1];var catColor=row[2];
+              var filtered=goals.filter(function(g){return g.cat===catId;});
+              if(filtered.length===0)return null;
               return(
-                <div key={cat2[0]} style={{marginBottom:16}}>
-                  <div style={{fontSize:9,color:cat2[2],fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",marginBottom:7,display:"flex",alignItems:"center",gap:6}}>
-                    <div style={{width:8,height:8,borderRadius:2,background:cat2[2],flexShrink:0}}/>
-                    {cat2[1]}
-                    <span style={{color:C.dim,fontWeight:400}}>({cg.length})</span>
+                <div key={catId} style={{marginBottom:16}}>
+                  <div style={{fontSize:9,color:catColor,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",marginBottom:7,display:"flex",alignItems:"center",gap:6}}>
+                    <div style={{width:8,height:8,borderRadius:2,background:catColor,flexShrink:0}}/>
+                    {catLabel}
+                    <span style={{color:C.dim,fontWeight:400}}>({filtered.length})</span>
                   </div>
-                  {cg.map(function(g){return(
-                    <div key={g.id} style={{display:"flex",gap:9,padding:"10px 12px",background:C.card,border:"1px solid "+cat2[2]+"28",borderLeft:"3px solid "+cat2[2],borderRadius:10,marginBottom:6,opacity:g.done?0.4:1}}>
-                      <button onClick={function(){toggle(g.id);}} style={{width:18,height:18,borderRadius:4,flexShrink:0,marginTop:1,border:"1.5px solid "+(g.done?cat2[2]:cat2[2]+"44"),background:g.done?cat2[2]:"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                        {g.done&&<span style={{color:C.bg,fontSize:10,fontWeight:900}}>✓</span>}
-                      </button>
-                      <div style={{flex:1}}>
-                        <div style={{fontSize:12,color:C.text,textDecoration:g.done?"line-through":"none",whiteSpace:"pre-wrap",lineHeight:1.5}}>{g.text}</div>
-                        {g.created&&<div style={{fontSize:8,color:C.gr,marginTop:3}}>{g.created}</div>}
+                  {filtered.map(function(g){
+                    return(
+                      <div key={g.id} style={{display:"flex",gap:9,padding:"10px 12px",background:C.card,border:"1px solid "+catColor+"28",borderLeft:"3px solid "+catColor,borderRadius:10,marginBottom:6,opacity:g.done?0.4:1}}>
+                        <button onClick={function(){toggleGoal(g.id);}}
+                          style={{width:18,height:18,borderRadius:4,flexShrink:0,marginTop:1,
+                            border:"1.5px solid "+(g.done?catColor:catColor+"44"),
+                            background:g.done?catColor:"transparent",
+                            cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                          {g.done&&<span style={{color:C.bg,fontSize:10,fontWeight:900}}>✓</span>}
+                        </button>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:12,color:C.text,textDecoration:g.done?"line-through":"none",whiteSpace:"pre-wrap",lineHeight:1.5}}>{g.text}</div>
+                          {g.created&&<div style={{fontSize:8,color:C.gr,marginTop:3}}>{g.created}</div>}
+                        </div>
+                        <button onClick={function(){delGoal(g.id);}}
+                          style={{background:"none",border:"none",color:C.r,cursor:"pointer",fontSize:16,opacity:0.5,flexShrink:0,alignSelf:"flex-start"}}>×</button>
                       </div>
-                      <button onClick={function(){del(g.id);}} style={{background:"none",border:"none",color:C.r,cursor:"pointer",fontSize:16,opacity:0.5,flexShrink:0,alignSelf:"flex-start"}}>×</button>
-                    </div>
-                  );})}
+                    );
+                  })}
                 </div>
               );
             })}
@@ -1918,12 +1945,13 @@ function Goals({goals,setGoals}){
 
         {tab==="dua"&&(
           <div>
-            <div style={{fontSize:11,color:C.gr,marginBottom:10,lineHeight:1.7}}>Your ultimate dua — read every morning at the mosque. Be specific. Ask for exactly what you want.</div>
+            <div style={{fontSize:11,color:C.gr,marginBottom:10,lineHeight:1.7}}>Your ultimate dua — read every morning at the mosque. Be specific.</div>
             <textarea value={dua} onChange={function(e){setDua(e.target.value);}} spellCheck={true}
-              placeholder={"Ya Allah, I ask you for:\n\n🕌 Deen:\n🌍 Dunya:\n♾️ Akhira:\n👨‍👩‍👧‍👦 Family:\n💍 Future wife:\n💼 Business:\n🏋️ Health:\n📚 Knowledge:\n💰 Financial freedom:\n\nAmeen."}
+              placeholder="Ya Allah, I ask you for..."
               style={{...ta(C.a),minHeight:500,lineHeight:1.9,fontSize:14}}/>
           </div>
         )}
+
       </div>
     </div>
   );

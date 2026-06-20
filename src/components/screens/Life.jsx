@@ -4,6 +4,7 @@ import GlassCard from '../ui/GlassCard';
 import { useStorage } from '../../hooks/useStorage';
 import { DEFAULT_GOALS, GOAL_CATEGORIES } from '../../data/defaults';
 import { compressFiles } from '../../utils/compress';
+import { screenEnter } from '../../utils/motion';
 
 const GOAL_TEMPLATE = `What: 
 Why (the real reason): 
@@ -36,9 +37,10 @@ export default function LifeScreen({ editMode }) {
   }
 
   return (
-    <motion.div className="screen" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+    <motion.div className="screen" {...screenEnter}>
       <div className="screen-header">
-        <h1 className="text-title2">🎯 Life</h1>
+        <h1 className="text-title gradient-text">🎯 Life</h1>
+        <p className="text-caption text-secondary">Goals · Dua · Vision</p>
       </div>
 
       <div className="segmented mb-16">

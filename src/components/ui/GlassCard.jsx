@@ -1,17 +1,10 @@
 import { motion } from 'framer-motion';
-
-const spring = { type: 'spring', stiffness: 400, damping: 35 };
+import { cardHover } from '../../utils/motion';
 
 export default function GlassCard({
-  children,
-  className = '',
-  elevated = false,
-  accentColor,
-  checked = false,
-  doneGreen = false,
-  onClick,
-  style,
-  hover = false,
+  children, className = '', elevated = false, accentColor,
+  checked = false, doneGreen = false, focusGlow = false,
+  onClick, style, hover = false, index = 0,
 }) {
   const classes = [
     'glass-card',
@@ -19,6 +12,8 @@ export default function GlassCard({
     accentColor && 'glass-card--accent-left',
     checked && 'glass-card--checked',
     doneGreen && 'glass-card--done-green',
+    focusGlow && 'glass-card--focus-glow',
+    (hover || onClick) && 'glass-card--hover',
     className,
   ].filter(Boolean).join(' ');
 
@@ -27,17 +22,31 @@ export default function GlassCard({
     ...(accentColor ? { '--card-accent': accentColor } : {}),
   };
 
-  const Component = onClick || hover ? motion.div : 'div';
-  const motionProps = onClick || hover ? {
-    onClick,
-    whileHover: hover ? { y: -3, transition: spring } : undefined,
-    whileTap: onClick ? { scale: 0.98, transition: { duration: 0.08 } } : undefined,
-    style: { cursor: onClick ? 'pointer' : undefined, ...cardStyle },
-  } : { style: cardStyle };
+  if (onClick || hover) {
+    return (
+      <motion.div
+        className={classes}
+        style={{ cursor: onClick ? 'pointer' : undefined, ...cardStyle }}
+        onClick={onClick}
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 380, damping: 32, delay: index * 0.045 }}
+        {...cardHover}
+      >
+        {children}
+      </motion.div>
+    );
+  }
 
   return (
-    <Component className={classes} {...motionProps}>
+    <motion.div
+      className={classes}
+      style={cardStyle}
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', stiffness: 380, damping: 32, delay: index * 0.045 }}
+    >
       {children}
-    </Component>
+    </motion.div>
   );
 }

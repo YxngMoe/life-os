@@ -6,6 +6,7 @@ import { useStorage } from '../../hooks/useStorage';
 import { DEFAULT_SUBJECTS } from '../../data/defaults';
 import { getSubjectNotes, setSubjectNotes, getSubjectCards, setSubjectCards, getSubjectTasks, setSubjectTasks } from '../../data/storage';
 import SubjectDetail from './SubjectDetail';
+import { screenEnter } from '../../utils/motion';
 
 export default function BrainScreen({ editMode, onNavigate }) {
   const [subjects, setSubjects] = useStorage('subjects', DEFAULT_SUBJECTS);
@@ -27,10 +28,10 @@ export default function BrainScreen({ editMode, onNavigate }) {
   }
 
   return (
-    <motion.div className="screen" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+    <motion.div className="screen" {...screenEnter}>
       <div className="screen-header">
-        <h1 className="text-title2">🧠 Second Brain</h1>
-        <p className="subtitle text-secondary">Knowledge Hub</p>
+        <h1 className="text-title gradient-text">🧠 Second Brain</h1>
+        <p className="text-caption text-secondary">Your personal knowledge hub</p>
       </div>
 
       <input

@@ -5,6 +5,7 @@ import { useStorage } from '../../hooks/useStorage';
 import { DEFAULT_DASHBOARDS, getDefaultDashboardComponents } from '../../data/defaults';
 import { getDashboardComponents, setDashboardComponents } from '../../data/storage';
 import DashboardDetail from './DashboardDetail';
+import { screenEnter, cardHover } from '../../utils/motion';
 
 export default function DashboardsScreen({ editMode }) {
   const [dashes, setDashes] = useStorage('dashes', DEFAULT_DASHBOARDS);
@@ -15,17 +16,19 @@ export default function DashboardsScreen({ editMode }) {
   }
 
   return (
-    <motion.div className="screen" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+    <motion.div className="screen" {...screenEnter}>
       <div className="screen-header">
-        <h1 className="text-title2">📊 Dashboards</h1>
+        <h1 className="text-title gradient-text">📊 Dashboards</h1>
+        <p className="text-caption text-secondary">Mission-specific control panels</p>
       </div>
 
       <div className="grid-2 grid-2-md-3">
         {dashes.map((d) => (
+          <motion.div key={d.id} {...cardHover}>
           <GlassCard
-            key={d.id}
             accentColor={d.c}
             hover
+            glow
             onClick={() => {
               if (!getDashboardComponents(d.id).length) {
                 setDashboardComponents(d.id, getDefaultDashboardComponents(d.id));
@@ -43,6 +46,7 @@ export default function DashboardsScreen({ editMode }) {
               <button type="button" style={{ position: 'absolute', top: 10, right: 10, background: 'none', border: 'none', color: 'var(--accent-rose)', cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); setDashes(dashes.filter((x) => x.id !== d.id)); }}>🗑</button>
             )}
           </GlassCard>
+          </motion.div>
         ))}
       </div>
     </motion.div>

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import GlassCard from '../ui/GlassCard';
 import { useStorage } from '../../hooks/useStorage';
 import { DEFAULT_ENC } from '../../data/defaults';
+import { screenEnter, stagger } from '../../utils/motion';
 
 const TABS = [
   { id: 'quotes', label: '✦ Quotes' },
@@ -24,10 +25,10 @@ export default function EncyclopediaScreen({ editMode }) {
   }
 
   return (
-    <motion.div className="screen" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+    <motion.div className="screen" {...screenEnter}>
       <div className="screen-header">
-        <h1 className="text-title2">📖 Encyclopedia</h1>
-        <p className="text-caption text-secondary">Personal Database</p>
+        <h1 className="text-title gradient-text">📖 Encyclopedia</h1>
+        <p className="text-caption text-secondary">Personal database · curated by Mohamed</p>
       </div>
 
       <div className="agent-pills mb-16">
@@ -38,13 +39,15 @@ export default function EncyclopediaScreen({ editMode }) {
         ))}
       </div>
 
-      {tab === 'quotes' && (enc.quotes || []).map((q) => (
-        <GlassCard key={q.id} accentColor="var(--accent-amber)" style={{ padding: 16, marginBottom: 8 }}>
+      {tab === 'quotes' && (enc.quotes || []).map((q, i) => (
+        <motion.div key={q.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={stagger(i)}>
+        <GlassCard key={q.id} accentColor="var(--accent-amber)" glow style={{ padding: 16, marginBottom: 8 }}>
           <div className="text-micro" style={{ color: 'var(--accent-amber)', marginBottom: 6 }}>✦</div>
           <p style={{ fontStyle: 'italic', fontSize: 15 }}>&ldquo;{q.t}&rdquo;</p>
           <p style={{ color: 'var(--accent-amber)', fontSize: 13, marginTop: 6 }}>— {q.a}</p>
           {editMode && <button type="button" onClick={() => removeItem(q.id)} style={{ marginTop: 8, color: 'var(--accent-rose)', background: 'none', border: 'none', cursor: 'pointer' }}>×</button>}
         </GlassCard>
+        </motion.div>
       ))}
 
       {tab === 'tv' && (enc.tv || []).map((item, i) => (

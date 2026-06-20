@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import GlassCard from '../ui/GlassCard';
 import { getDashboardComponents, setDashboardComponents } from '../../data/storage';
+import { screenEnter } from '../../utils/motion';
 
 export default function DashboardDetail({ dash, onBack, editMode }) {
   const [components, setComponentsState] = useState(() => getDashboardComponents(dash.id));
@@ -21,15 +22,15 @@ export default function DashboardDetail({ dash, onBack, editMode }) {
   }
 
   return (
-    <motion.div className="screen" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+    <motion.div className="screen" {...screenEnter}>
       <button type="button" className="glass-pill mb-16" onClick={onBack}><ArrowLeft size={14} /> Back</button>
-      <div style={{ background: `linear-gradient(135deg, ${dash.c}33, transparent)`, padding: 20, borderRadius: 16, marginBottom: 20 }}>
+      <div className="glass-card glow" style={{ background: `linear-gradient(135deg, ${dash.c}22, transparent)`, padding: 20, borderRadius: 16, marginBottom: 20, borderLeft: `3px solid ${dash.c}` }}>
         <h1 className="text-title2">{dash.i} {dash.l}</h1>
         <p className="text-secondary">{dash.d}</p>
       </div>
 
       {components.map((comp) => (
-        <GlassCard key={comp.id} style={{ padding: 16, marginBottom: 12 }}>
+        <GlassCard key={comp.id} accentColor={dash.c} glow style={{ padding: 16, marginBottom: 12 }}>
           <div className="text-caption" style={{ color: dash.c, marginBottom: 10 }}>{comp.title}</div>
 
           {comp.type === 'note' && <div style={{ whiteSpace: 'pre-wrap', fontSize: 14 }}>{comp.content}</div>}

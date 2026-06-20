@@ -1,21 +1,28 @@
 export const PIN = '2232';
 
+export const NN_COLORS = {
+  prayer: 'var(--amber)',
+  physical: 'var(--pink)',
+  study: 'var(--indigo)',
+  default: 'var(--violet)',
+};
+
 export const NON_NEGOTIABLES = [
-  { id: 'fajr', label: 'Fajr prayer ✓' },
-  { id: 'push', label: '100 pushups outside' },
-  { id: 'dua', label: 'Ultimate Dua (every word)' },
-  { id: 'voice', label: 'Full voice routine' },
-  { id: 'jour', label: 'Morning journal + vocab' },
-  { id: 'lift', label: 'Lift session complete' },
-  { id: 'study', label: '4 study blocks done' },
-  { id: 'nsdr', label: '4 NSDR sessions' },
-  { id: 'ball', label: 'Evening basketball / sport' },
-  { id: 'pray5', label: 'All 5 prayers complete' },
-  { id: 'quran', label: 'Quran from memory' },
-  { id: 'fam', label: 'Family check-in call' },
-  { id: 'nj', label: 'Night journal + Quizlet' },
-  { id: 'cold', label: 'Cold plunge + hot tub' },
-  { id: 'car9', label: 'In car by 9pm' },
+  { id: 'fajr', label: 'Fajr prayer ✓', cat: 'prayer' },
+  { id: 'push', label: '100 pushups outside', cat: 'physical' },
+  { id: 'dua', label: 'Ultimate Dua (every word)', cat: 'prayer' },
+  { id: 'voice', label: 'Full voice routine', cat: 'default' },
+  { id: 'jour', label: 'Morning journal + vocab', cat: 'study' },
+  { id: 'lift', label: 'Lift session complete', cat: 'physical' },
+  { id: 'study', label: '4 study blocks done', cat: 'study' },
+  { id: 'nsdr', label: '4 NSDR sessions', cat: 'study' },
+  { id: 'ball', label: 'Evening basketball / sport', cat: 'physical' },
+  { id: 'pray5', label: 'All 5 prayers complete', cat: 'prayer' },
+  { id: 'quran', label: 'Quran from memory', cat: 'prayer' },
+  { id: 'fam', label: 'Family check-in call', cat: 'default' },
+  { id: 'nj', label: 'Night journal + Quizlet', cat: 'study' },
+  { id: 'cold', label: 'Cold plunge + hot tub', cat: 'physical' },
+  { id: 'car9', label: 'In car by 9pm', cat: 'default' },
 ];
 
 export const LIFT_DAYS = ['Push', 'Pull', 'Legs Power', 'Chest & Back', 'Chest & Back HEAVY', 'Shoulders & Arms', 'Deadlift & Unilateral'];

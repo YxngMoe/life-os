@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
+import { ToastProvider, useToast } from './context/ToastContext';
 import PinLock from './components/ui/PinLock';
 import TabBar from './components/ui/TabBar';
 import Sidebar from './components/ui/Sidebar';
+import AmbientGlow from './components/ui/AmbientGlow';
+import GlobalSearch from './components/ui/GlobalSearch';
 import Home from './components/screens/Home';
 import CalendarScreen from './components/screens/Calendar';
 import BrainScreen from './components/screens/Brain';
@@ -15,6 +18,7 @@ import { useTheme } from './hooks/useTheme';
 import { useEditMode } from './hooks/useEditMode';
 import { useOpenClaw } from './hooks/useOpenClaw';
 import { initStorage, migrateLegacyKeys } from './data/storage';
+import { syncToObsidian } from './utils/sync';
 import {
   DEFAULT_GOALS, DEFAULT_SUBJECTS, DEFAULT_DASHBOARDS, DEFAULT_ENC, DEFAULT_QUICK_TILES,
 } from './data/defaults';
@@ -41,6 +45,7 @@ function initApp() {
     agent_log: [],
     last_sync: null,
     mem: '',
+    search_history: [],
   });
   AGENTS_INIT.forEach((id) => {
     if (localStorage.getItem(`los_chat_${id}`) === null) {
@@ -49,21 +54,53 @@ function initApp() {
   });
 }
 
-export default function App() {
+function AppInner() {
+  const toast = useToast();
   const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem('los_unlocked') === '1');
   const [screen, setScreen] = useState('/home');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [offline, setOffline] = useState(!navigator.onLine);
+  const [syncState, setSyncState] = useState('idle');
   const { lightMode, toggle } = useTheme();
   const { editMode, showPin, setShowPin, toggleEdit, unlockWithPin, touch } = useEditMode();
   const { status } = useOpenClaw();
   const [pinInput, setPinInput] = useState('');
 
-  useEffect(() => {
-    initApp();
-  }, []);
+  useEffect(() => { initApp(); }, []);
 
   useEffect(() => {
     document.documentElement.classList.toggle('light-mode', lightMode);
   }, [lightMode]);
+
+  useEffect(() => {
+    const on = () => setOffline(false);
+    const off = () => setOffline(true);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
+  }, []);
+
+  useEffect(() => {
+    function onKey(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen((o) => !o);
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  async function handleSync() {
+    try {
+      await syncToObsidian(setSyncState);
+      toast('Obsidian sync complete', 'emerald');
+      setTimeout(() => setSyncState('idle'), 2000);
+    } catch {
+      setSyncState('error');
+      toast('Sync failed', 'amber');
+    }
+  }
 
   function handleUnlock() {
     sessionStorage.setItem('los_unlocked', '1');
@@ -71,22 +108,21 @@ export default function App() {
   }
 
   function navigate(path) {
-    if (path === '/edit') {
-      toggleEdit();
-      return;
-    }
+    if (path === '/edit') { toggleEdit(); return; }
     touch();
     setScreen(path);
   }
 
-  if (!unlocked) {
-    return <PinLock onUnlock={handleUnlock} />;
-  }
+  if (!unlocked) return <><AmbientGlow /><PinLock onUnlock={handleUnlock} /></>;
+
+  const homeProps = {
+    onNavigate: navigate, editMode, openClawStatus: status,
+    onSync: handleSync, syncState, onToggleTheme: toggle, lightMode,
+  };
 
   function renderScreen() {
-    const props = { onNavigate: navigate, editMode, openClawStatus: status };
     switch (screen) {
-      case '/home': return <Home {...props} />;
+      case '/home': return <Home {...homeProps} />;
       case '/calendar': return <CalendarScreen editMode={editMode} />;
       case '/brain': return <BrainScreen editMode={editMode} onNavigate={navigate} />;
       case '/encyclopedia': return <EncyclopediaScreen editMode={editMode} />;
@@ -94,39 +130,41 @@ export default function App() {
       case '/dashboards': return <DashboardsScreen editMode={editMode} />;
       case '/todo': return <TodoScreen editMode={editMode} />;
       case '/coach': return <CoachScreen onNavigate={navigate} />;
-      default: return <Home {...props} />;
+      default: return <Home {...homeProps} />;
     }
   }
 
   return (
-    <div className="app-shell">
+    <>
+      <AmbientGlow />
+      {offline && <div className="offline-banner">Offline — AI features may use fallback mode</div>}
       {editMode && <div className="edit-mode-banner">🔐 EDIT MODE ACTIVE</div>}
 
-      <Sidebar screen={screen} onNavigate={navigate} lightMode={lightMode} onToggleTheme={toggle} />
+      <div className="app-shell">
+        <Sidebar screen={screen} onNavigate={navigate} lightMode={lightMode} onToggleTheme={toggle}
+          onSync={handleSync} syncState={syncState} editMode={editMode} />
+        <main className="app-main" onClick={touch}>{renderScreen()}</main>
+        <TabBar screen={screen} onNavigate={navigate} editMode={editMode} />
+      </div>
 
-      <main className="app-main" onClick={touch}>
-        {renderScreen()}
-      </main>
-
-      <TabBar screen={screen} onNavigate={navigate} />
+      <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} onNavigate={navigate} />
 
       <BottomSheet open={showPin} onClose={() => setShowPin(false)} title="Enter PIN for Edit Mode">
-        <input
-          className="glass-input mb-16"
-          type="password"
-          inputMode="numeric"
-          maxLength={4}
-          placeholder="2232"
-          value={pinInput}
-          onChange={(e) => {
+        <input className="glass-input mb-16" type="password" inputMode="numeric" maxLength={4} placeholder="2232"
+          value={pinInput} onChange={(e) => {
             const v = e.target.value.replace(/\D/g, '').slice(0, 4);
             setPinInput(v);
-            if (v.length === 4) {
-              if (!unlockWithPin(v)) setPinInput('');
-            }
-          }}
-        />
+            if (v.length === 4 && !unlockWithPin(v)) setPinInput('');
+          }} />
       </BottomSheet>
-    </div>
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <ToastProvider>
+      <AppInner />
+    </ToastProvider>
   );
 }

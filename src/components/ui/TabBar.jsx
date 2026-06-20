@@ -1,4 +1,4 @@
-import { Home, Calendar, Brain, BookOpen, Target, LayoutDashboard, Sparkles, Lock } from 'lucide-react';
+import { Home, Calendar, Brain, BookOpen, Target, LayoutDashboard, CheckSquare, Sparkles, Lock } from 'lucide-react';
 
 const TABS = [
   { id: '/home', label: 'Home', icon: Home, color: '#6366f1' },
@@ -7,26 +7,22 @@ const TABS = [
   { id: '/encyclopedia', label: 'Enc', icon: BookOpen, color: '#fbbf24' },
   { id: '/life', label: 'Life', icon: Target, color: '#fb923c' },
   { id: '/dashboards', label: 'Dash', icon: LayoutDashboard, color: '#2dd4bf' },
+  { id: '/todo', label: 'Tasks', icon: CheckSquare, color: '#60a5fa' },
   { id: '/coach', label: 'Coach', icon: Sparkles, color: '#f472b6' },
   { id: '/edit', label: 'Edit', icon: Lock, color: '#fbbf24' },
 ];
 
-export default function TabBar({ screen, onNavigate }) {
+export default function TabBar({ screen, onNavigate, editMode }) {
   return (
     <nav className="tab-bar">
       {TABS.map(({ id, label, icon: Icon, color }) => {
-        const active = screen === id || (id === '/home' && screen.startsWith('/home'));
+        const active = screen === id;
+        const isEdit = id === '/edit' && editMode;
         return (
-          <button
-            key={id}
-            type="button"
-            className={active ? 'active' : ''}
-            style={{ '--tab-color': color }}
-            onClick={() => onNavigate(id)}
-          >
-            <Icon strokeWidth={active ? 2.2 : 1.8} />
+          <button key={id} type="button" className={active || isEdit ? 'active' : ''} style={{ '--tab-color': color }} onClick={() => onNavigate(id)}>
+            <Icon strokeWidth={active ? 2.2 : 1.6} />
             <span>{label}</span>
-            <span className="tab-dot" />
+            <span className="tab-indicator" />
           </button>
         );
       })}

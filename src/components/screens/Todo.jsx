@@ -6,6 +6,8 @@ import { TODO_CATS } from '../../data/defaults';
 
 const FILTERS = ['all', 'today', 'jpmc', 'business', 'personal', 'health', 'finance', 'done'];
 
+import { screenEnter } from '../../utils/motion';
+
 export default function TodoScreen({ editMode }) {
   const [todos, setTodos] = useStorage('todos', []);
   const [text, setText] = useState('');
@@ -31,10 +33,10 @@ export default function TodoScreen({ editMode }) {
   }
 
   return (
-    <motion.div className="screen" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-      <div className="screen-header flex justify-between items-center">
-        <h1 className="text-title2">✅ To-Do</h1>
-        <span className="glass-pill">{todos.filter((t) => !t.done).length} pending</span>
+    <motion.div className="screen" {...screenEnter}>
+      <div className="flex justify-between items-center mb-20">
+        <h1 className="text-title gradient-text">✅ To-Do</h1>
+        <span className="glass-pill glass-pill--active">{todos.filter((t) => !t.done).length} pending</span>
       </div>
 
       <div className="flex gap-8 mb-12">
@@ -47,7 +49,10 @@ export default function TodoScreen({ editMode }) {
 
       <div className="agent-pills mb-16">
         {FILTERS.map((f) => (
-          <button key={f} type="button" className={`glass-pill ${filter === f ? 'glass-pill--active' : ''}`} onClick={() => setFilter(f)}>
+          <button key={f} type="button"
+            className={`glass-pill ${filter === f ? 'glass-pill--active' : ''}`}
+            style={filter === f && f !== 'all' && f !== 'done' ? { background: TODO_CATS[f]?.color + '33', borderColor: TODO_CATS[f]?.color, color: TODO_CATS[f]?.color } : {}}
+            onClick={() => setFilter(f)}>
             {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
           </button>
         ))}

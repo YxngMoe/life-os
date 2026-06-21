@@ -33,15 +33,15 @@ export default function PinLock({ onUnlock }) {
     <div className="pin-screen">
       <AmbientGlow />
       <motion.div
-        className="glass-card glass-card--elevated"
+        className="glass-card glass-card--elevated glass-card--neon"
         style={{ padding: '44px 32px', maxWidth: 340, width: '100%', textAlign: 'center', zIndex: 1 }}
         initial={{ opacity: 0, y: 24, filter: 'blur(8px)' }}
         animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
         transition={{ type: 'spring', stiffness: 380, damping: 32 }}
       >
         <div className="sidebar-m" style={{ margin: '0 auto 20px', width: 48, height: 48, fontSize: 18 }}>M</div>
-        <h1 className="text-display gradient-text" style={{ fontSize: 28 }}>Life OS</h1>
-        <p className="text-micro text-secondary" style={{ marginTop: 10 }}>Mohamed&apos;s Personal AI Operating System</p>
+        <h1 className="text-display gradient-text" style={{ fontSize: 28 }}>Neural OS</h1>
+        <p className="text-micro text-secondary" style={{ marginTop: 10 }}>Mohamed&apos;s AI Operating System · 2032</p>
 
         <input ref={inputRef} type="password" inputMode="numeric" autoFocus
           style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }}

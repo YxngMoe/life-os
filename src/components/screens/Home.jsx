@@ -142,6 +142,7 @@ export default function Home({ onNavigate, editMode, openClawStatus, onSync, syn
 
       <div className="flex justify-between items-start mb-24">
         <div>
+          <span className="screen-hero__badge" style={{ display: 'inline-block', marginBottom: 8 }}>NEURAL OS · HOME</span>
           <h1 className="text-display gradient-text">{getGreeting()}</h1>
           <p className="text-caption text-secondary" style={{ marginTop: 6 }}>{formatDate(new Date())}</p>
           <LiveClock />

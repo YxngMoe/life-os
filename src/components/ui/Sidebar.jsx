@@ -23,8 +23,8 @@ export default function Sidebar({ screen, onNavigate, lightMode, onToggleTheme, 
       <div className="sidebar-brand">
         <div className="sidebar-m">M</div>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 700 }}>Life OS</div>
-          <div className="text-micro">Mohamed</div>
+          <div style={{ fontSize: 14, fontWeight: 700 }} className="accent-text">Neural OS</div>
+          <div className="text-micro">Mohamed · AI</div>
         </div>
       </div>
       <nav className="sidebar-nav">

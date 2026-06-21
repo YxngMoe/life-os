@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Mic, Send, Target, Zap } from 'lucide-react';
 import GlassCard from '../ui/GlassCard';
+import ScreenHero from '../ui/ScreenHero';
 import AgentPills from '../ui/AgentPills';
 import CountUp from '../ui/CountUp';
 import { useStorage } from '../../hooks/useStorage';
@@ -117,13 +118,18 @@ export default function CoachScreen({ onNavigate }) {
 
   return (
     <motion.div className="screen" style={{ display: 'flex', flexDirection: 'column', minHeight: 'calc(100vh - 140px)' }} {...screenEnter}>
-      <div className="flex justify-between items-start mb-12">
-        <div>
-          <h1 className="text-title gradient-text">✨ Coach</h1>
-          <p className="text-caption text-secondary">Voice · Chat · Agents · Feynman · Interview</p>
-        </div>
-        <span className="glass-pill"><span className={`status-dot ${statusDot}`} /> {status === 'connected' ? 'OpenClaw' : 'Fallback'}</span>
-      </div>
+      <ScreenHero
+        icon="✨"
+        title="AI Neural Coach"
+        subtitle="Voice · Chat · Agents · Feynman · Interview prep"
+        accent="#f472b6"
+        badge={status === 'connected' ? 'OPENCLAW LIVE' : 'FALLBACK MODE'}
+        stats={[
+          { label: 'Goals active', value: goalStats.active },
+          { label: 'Critical', value: goalStats.critical, color: '#f87171' },
+          { label: 'Agent', value: agentData?.name || 'Moe' },
+        ]}
+      />
 
       <AgentPills active={agent} onSelect={setAgent} />
 

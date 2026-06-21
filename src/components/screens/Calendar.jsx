@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import GlassCard from '../ui/GlassCard';
 import BottomSheet from '../ui/BottomSheet';
+import ScreenHero from '../ui/ScreenHero';
 import BuildBadge from '../ui/BuildBadge';
 import TodayPanel from '../calendar/TodayPanel';
 import { useStorage } from '../../hooks/useStorage';
@@ -56,13 +57,21 @@ export default function CalendarScreen({ editMode }) {
 
   return (
     <motion.div className="screen" {...screenEnter}>
-      <div className="flex justify-between items-start mb-16">
-        <div>
-          <h1 className="text-title gradient-text">📅 Calendar</h1>
-          <p className="text-caption text-secondary">Your full day — schedule, events, non-negotiables</p>
+      <ScreenHero
+        icon="📅"
+        title="Temporal Command"
+        subtitle="Schedule · events · non-negotiables · full day agenda"
+        accent="#34d399"
+        badge="TIME MATRIX"
+        stats={[
+          { label: 'Events today', value: (events[dateKey()] || []).length },
+          { label: 'Blocks', value: 35 },
+        ]}
+      >
+        <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
+          <BuildBadge variant="compact" />
         </div>
-        <BuildBadge variant="compact" />
-      </div>
+      </ScreenHero>
 
       <div className="segmented mb-20">
         {[

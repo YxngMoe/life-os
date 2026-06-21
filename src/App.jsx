@@ -5,6 +5,7 @@ import TabBar from './components/ui/TabBar';
 import Sidebar from './components/ui/Sidebar';
 import AmbientGlow from './components/ui/AmbientGlow';
 import GlobalSearch from './components/ui/GlobalSearch';
+import AIStrip from './components/ui/AIStrip';
 import BuildBadge from './components/ui/BuildBadge';
 import Home from './components/screens/Home';
 import CalendarScreen from './components/screens/Calendar';
@@ -145,8 +146,11 @@ function AppInner() {
 
       <div className="app-shell">
         <Sidebar screen={screen} onNavigate={navigate} lightMode={lightMode} onToggleTheme={toggle}
-          onSync={handleSync} syncState={syncState} editMode={editMode} />
-        <main className="app-main" onClick={touch}>{renderScreen()}</main>
+          onSync={handleSync} syncState={syncState} editMode={editMode} openClawStatus={status} />
+        <main className="app-main" onClick={touch}>
+          <AIStrip openClawStatus={status} offline={offline} />
+          {renderScreen()}
+        </main>
         <TabBar screen={screen} onNavigate={navigate} editMode={editMode} />
       </div>
 

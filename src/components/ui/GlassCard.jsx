@@ -4,6 +4,7 @@ import { cardHover } from '../../utils/motion';
 export default function GlassCard({
   children, className = '', elevated = false, accentColor,
   checked = false, doneGreen = false, focusGlow = false,
+  holographic = false, neon = false,
   onClick, style, hover = false, index = 0,
 }) {
   const classes = [
@@ -13,6 +14,8 @@ export default function GlassCard({
     checked && 'glass-card--checked',
     doneGreen && 'glass-card--done-green',
     focusGlow && 'glass-card--focus-glow',
+    holographic && 'glass-card--holographic',
+    neon && 'glass-card--neon',
     (hover || onClick) && 'glass-card--hover',
     className,
   ].filter(Boolean).join(' ');

@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Zap, Target, Calendar, Flag } from 'lucide-react';
 import GlassCard from '../ui/GlassCard';
+import ScreenHero from '../ui/ScreenHero';
 import CountUp from '../ui/CountUp';
 import { useStorage } from '../../hooks/useStorage';
 import { TODO_CATS } from '../../data/defaults';
@@ -102,34 +103,21 @@ export default function TodoScreen() {
 
   return (
     <motion.div className="screen" {...screenEnter}>
-      <div className="flex justify-between items-center mb-16">
-        <div>
-          <h1 className="text-title gradient-text">✅ Mission Queue</h1>
-          <p className="text-caption text-secondary">Priority · deadlines · goal-linked tasks</p>
-        </div>
-        <span className="glass-pill glass-pill--active"><CountUp value={stats.pending} /> pending</span>
-      </div>
+      <ScreenHero
+        icon="✅"
+        title="Mission Queue"
+        subtitle="Priority tasks · deadlines · goal-linked ops"
+        accent="#38bdf8"
+        badge="TASK MATRIX"
+        stats={[
+          { label: 'Pending', value: stats.pending },
+          { label: 'Critical', value: stats.critical, color: '#f87171' },
+          { label: 'Overdue', value: stats.overdue, color: '#fb923c' },
+          { label: 'Done today', value: stats.doneToday, color: '#34d399' },
+        ]}
+      />
 
-      <div className="todo-stats mb-16">
-        <GlassCard style={{ padding: '12px 14px', textAlign: 'center' }}>
-          <div className="text-micro text-tertiary">Pending</div>
-          <div className="text-headline"><CountUp value={stats.pending} /></div>
-        </GlassCard>
-        <GlassCard accentColor="#f87171" style={{ padding: '12px 14px', textAlign: 'center' }}>
-          <div className="text-micro text-tertiary">Critical</div>
-          <div className="text-headline" style={{ color: '#f87171' }}><CountUp value={stats.critical} /></div>
-        </GlassCard>
-        <GlassCard accentColor="#fb923c" style={{ padding: '12px 14px', textAlign: 'center' }}>
-          <div className="text-micro text-tertiary">Overdue</div>
-          <div className="text-headline" style={{ color: stats.overdue ? '#fb923c' : 'inherit' }}><CountUp value={stats.overdue} /></div>
-        </GlassCard>
-        <GlassCard accentColor="#34d399" style={{ padding: '12px 14px', textAlign: 'center' }}>
-          <div className="text-micro text-tertiary">Done today</div>
-          <div className="text-headline" style={{ color: '#34d399' }}><CountUp value={stats.doneToday} /></div>
-        </GlassCard>
-      </div>
-
-      <GlassCard className="todo-composer mb-16" style={{ padding: 14 }}>
+      <GlassCard className="todo-composer mb-16" holographic style={{ padding: 14 }}>
         <input
           className="glass-input w-full mb-8"
           placeholder="What needs to get done?"

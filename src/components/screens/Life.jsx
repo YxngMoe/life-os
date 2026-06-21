@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import GlassCard from '../ui/GlassCard';
 import BuildBadge from '../ui/BuildBadge';
 import GoalsCommand from '../goals/GoalsCommand';
+import ScreenHero from '../ui/ScreenHero';
+import { getGoalsStats } from '../../data/goals';
 import { useStorage } from '../../hooks/useStorage';
 import { DEFAULT_GOALS, GOAL_CATEGORIES } from '../../data/defaults';
 import { compressFiles } from '../../utils/compress';
@@ -54,15 +56,26 @@ export default function LifeScreen({ editMode }) {
     setNewGoal('');
   }
 
+  const goalStats = getGoalsStats(goals);
+
   return (
     <motion.div className="screen" {...screenEnter}>
-      <div className="screen-header flex justify-between items-start">
-        <div>
-          <h1 className="text-title gradient-text">🎯 Life</h1>
-          <p className="text-caption text-secondary">{goals.length} goals · Command center for your entire life</p>
+      <ScreenHero
+        icon="🎯"
+        title="Life Command Center"
+        subtitle={`${goals.length} goals · identity · vision · full context`}
+        accent="#fb923c"
+        badge="LIFE MATRIX"
+        stats={[
+          { label: 'Active', value: goalStats.active },
+          { label: 'Critical', value: goalStats.critical, color: '#f87171' },
+          { label: 'Progress', value: `${goalStats.avgProgress}%`, color: '#34d399' },
+        ]}
+      >
+        <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
+          <BuildBadge variant="compact" />
         </div>
-        <BuildBadge variant="compact" />
-      </div>
+      </ScreenHero>
 
       <div className="segmented mb-16">
         {['goals', 'dua', 'vision', 'context'].map((t) => (

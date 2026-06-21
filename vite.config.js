@@ -1,8 +1,9 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { execSync } from 'child_process';
 import { readFileSync } from 'fs';
+import { apiRoutesPlugin } from './lib/vite-api-plugin.js';
 
 function gitSha() {
   try {
@@ -16,13 +17,18 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 
 const buildTime = new Date().toISOString();
 const buildSha = gitSha();
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  Object.assign(process.env, env);
+
+  return {
   define: {
     __BUILD_TIME__: JSON.stringify(buildTime),
     __BUILD_SHA__: JSON.stringify(buildSha),
     __BUILD_VERSION__: JSON.stringify(pkg.version),
   },
   plugins: [
+    apiRoutesPlugin(),
     react(),
     VitePWA({
       registerType: 'autoUpdate',
@@ -44,4 +50,5 @@ export default defineConfig({
       },
     }),
   ],
+};
 });

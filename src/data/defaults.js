@@ -33,7 +33,7 @@ export const DEFAULT_QUICK_TILES = [
   { id: 't2', dest: '/todo', icon: '✅', label: 'To-Do' },
   { id: 't3', dest: '/dashboards', icon: '📊', label: 'Dash' },
   { id: 't4', dest: '/calendar', icon: '📅', label: 'Cal' },
-  { id: 't5', dest: '/coach', icon: '✨', label: 'Coach' },
+  { id: 't5', dest: '/agents', icon: '🤖', label: 'Agents' },
   { id: 't6', dest: '/life', icon: '🎯', label: 'Goals' },
 ];
 

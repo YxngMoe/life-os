@@ -11,9 +11,11 @@ import { AGENTS, AGENT_PROMPTS, DEFAULT_SUBJECTS } from '../../data/defaults';
 import { getAgentChat, setAgentChat, getSubjectNotes, lsGet, lsSet } from '../../data/storage';
 import { useOpenClaw, sendAnthropicFallback } from '../../hooks/useOpenClaw';
 import { calcGoalProgress, getGoalsStats } from '../../data/goals';
+import AgentHub from '../agents/AgentHub';
 import { screenEnter } from '../../utils/motion';
 
 const MODES = [
+  { id: 'command', label: '🤖 Command' },
   { id: 'voice', label: '🎙️ Voice' },
   { id: 'chat', label: '💬 Chat' },
   { id: 'agents', label: '🤖 Agents' },
@@ -88,6 +90,20 @@ export default function CoachScreen({ onNavigate }) {
     }
   }
 
+  useEffect(() => {
+    const pendingAgent = sessionStorage.getItem('los_coach_agent');
+    const pendingPrompt = sessionStorage.getItem('los_coach_prompt');
+    if (pendingAgent) {
+      setAgent(pendingAgent);
+      setMode('chat');
+      sessionStorage.removeItem('los_coach_agent');
+    }
+    if (pendingPrompt) {
+      sessionStorage.removeItem('los_coach_prompt');
+      setTimeout(() => send(pendingPrompt, 'Delegated mission'), 400);
+    }
+  }, []);
+
   function toggleVoice() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) { toast('Voice not supported in this browser', 'amber'); return; }
@@ -158,6 +174,8 @@ export default function CoachScreen({ onNavigate }) {
         ))}
       </div>
 
+      {mode === 'command' && <AgentHub embedded onNavigate={onNavigate} />}
+
       {mode === 'agents' && (
         <div className="grid-2 mb-16">
           {AGENTS.map((a) => {
@@ -214,7 +232,7 @@ export default function CoachScreen({ onNavigate }) {
         </div>
       )}
 
-      {(mode === 'chat' || feynmanActive) && mode !== 'agents' && mode !== 'voice' && (
+      {(mode === 'chat' || feynmanActive) && mode !== 'agents' && mode !== 'voice' && mode !== 'command' && (
         <>
           <div className="chat-messages flex-1">
             {messages.length === 0 && (

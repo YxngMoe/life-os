@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ToastProvider, useToast } from './context/ToastContext';
+import { NeuralProvider } from './context/NeuralContext';
 import PinLock from './components/ui/PinLock';
 import TabBar from './components/ui/TabBar';
 import Sidebar from './components/ui/Sidebar';
@@ -15,6 +16,7 @@ import LifeScreen from './components/screens/Life';
 import DashboardsScreen from './components/screens/Dashboards';
 import TodoScreen from './components/screens/Todo';
 import CoachScreen from './components/screens/Coach';
+import AgentsScreen from './components/screens/Agents';
 import BottomSheet from './components/ui/BottomSheet';
 import { useTheme } from './hooks/useTheme';
 import { useEditMode } from './hooks/useEditMode';
@@ -134,12 +136,13 @@ function AppInner() {
       case '/dashboards': return <DashboardsScreen editMode={editMode} />;
       case '/todo': return <TodoScreen editMode={editMode} />;
       case '/coach': return <CoachScreen onNavigate={navigate} />;
+      case '/agents': return <AgentsScreen onNavigate={navigate} />;
       default: return <Home {...homeProps} />;
     }
   }
 
   return (
-    <>
+    <NeuralProvider>
       <AmbientGlow />
       {offline && <div className="offline-banner">Offline — AI features may use fallback mode</div>}
       {editMode && <div className="edit-mode-banner">🔐 EDIT MODE ACTIVE</div>}
@@ -168,7 +171,7 @@ function AppInner() {
             if (v.length === 4 && !unlockWithPin(v)) setPinInput('');
           }} />
       </BottomSheet>
-    </>
+    </NeuralProvider>
   );
 }
 

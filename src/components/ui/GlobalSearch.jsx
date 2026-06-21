@@ -9,6 +9,7 @@ const QUICK_NAV = [
   { label: 'Home', dest: '/home' },
   { label: 'Calendar', dest: '/calendar' },
   { label: 'Goals', dest: '/life' },
+  { label: 'Agents', dest: '/agents' },
   { label: 'Coach', dest: '/coach' },
   { label: 'Tasks', dest: '/todo' },
 ];

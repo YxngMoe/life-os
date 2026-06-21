@@ -1,10 +1,10 @@
-import { Home, Calendar, Brain, BookOpen, Target, LayoutDashboard, CheckSquare, Sparkles, Lock } from 'lucide-react';
+import { Home, Calendar, Brain, BookOpen, Target, LayoutDashboard, CheckSquare, Sparkles, Lock, Bot } from 'lucide-react';
 
 const TABS = [
   { id: '/home', label: 'Home', icon: Home, color: '#22d3ee' },
   { id: '/calendar', label: 'Cal', icon: Calendar, color: '#34d399' },
   { id: '/brain', label: 'Brain', icon: Brain, color: '#c084fc' },
-  { id: '/encyclopedia', label: 'Enc', icon: BookOpen, color: '#fbbf24' },
+  { id: '/agents', label: 'Agents', icon: Bot, color: '#c084fc' },
   { id: '/life', label: 'Life', icon: Target, color: '#fb923c' },
   { id: '/dashboards', label: 'Dash', icon: LayoutDashboard, color: '#2dd4bf' },
   { id: '/todo', label: 'Tasks', icon: CheckSquare, color: '#38bdf8' },

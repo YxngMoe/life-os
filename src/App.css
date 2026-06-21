@@ -379,3 +379,31 @@ body{font-family:-apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue",s
 .feature-chips::-webkit-scrollbar{display:none}
 .feature-chip{flex-shrink:0;padding:8px 14px;border-radius:12px;border:1px solid rgba(34,211,238,0.2);background:rgba(34,211,238,0.06);font-size:11px;font-weight:600;color:var(--neon);cursor:pointer;transition:all 0.2s;font-family:inherit}
 .feature-chip:hover{background:rgba(34,211,238,0.12);box-shadow:var(--glow-indigo)}
+
+/* Neural Pulse — live rotating context */
+.neural-pulse__bar{display:flex;align-items:center;gap:6px;padding:10px 14px;border-bottom:1px solid rgba(34,211,238,0.1)}
+.neural-pulse__dot{width:6px;height:6px;border-radius:50%;border:none;background:rgba(255,255,255,0.15);cursor:pointer;padding:0;transition:all 0.2s}
+.neural-pulse__dot--active{background:var(--neon);box-shadow:var(--glow-indigo);transform:scale(1.2)}
+.neural-pulse__phase{margin-left:auto;font-size:9px;font-weight:700;letter-spacing:0.1em;color:var(--text3)}
+.neural-pulse__body{display:flex;align-items:flex-start;gap:14px;padding:18px 16px;position:relative}
+.neural-pulse__icon{font-size:32px;flex-shrink:0}
+.neural-pulse__text{font-size:15px;font-weight:600;line-height:1.45}
+.neural-pulse__live{position:absolute;top:12px;right:14px;font-size:8px;font-weight:800;letter-spacing:0.14em;color:var(--emerald);animation:pulseDot 2s ease-in-out infinite}
+
+/* Agent cards */
+.agent-card--recommended{border-color:rgba(192,132,252,0.4)!important}
+.agent-card__head{width:100%;display:flex;align-items:center;gap:14px;padding:14px 16px;border:none;background:transparent;color:inherit;cursor:pointer;font-family:inherit;text-align:left}
+.agent-card__avatar{position:relative;width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--glass2);flex-shrink:0}
+.agent-card__pulse{position:absolute;inset:-3px;border-radius:16px;border:2px solid var(--neon2);animation:pulseDot 2s ease-in-out infinite;pointer-events:none}
+.agent-card__rec{font-size:8px;font-weight:800;letter-spacing:0.1em;color:var(--neon2);padding:2px 6px;border-radius:6px;background:rgba(192,132,252,0.15)}
+.agent-card__body{padding:0 16px 16px;border-top:1px solid rgba(255,255,255,0.05)}
+.agent-card__caps{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.agent-card__actions{display:flex;flex-wrap:wrap;gap:6px}
+
+/* Mission board */
+.mission-board__item--now{border-color:rgba(34,211,238,0.45)!important;box-shadow:var(--glow-neon)!important}
+.mission-board__rank{width:24px;height:24px;border-radius:8px;background:rgba(34,211,238,0.12);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--neon);flex-shrink:0}
+
+/* Orchestrator */
+.orchestrator__ticker{flex:1;font-size:10px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-left:8px}
+.ai-strip__dynamic{flex:1;font-size:9px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;margin-left:8px}

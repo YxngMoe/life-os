@@ -1,4 +1,4 @@
-import { Home, Calendar, Brain, BookOpen, Target, LayoutDashboard, CheckSquare, Sparkles, Lock, Sun, Moon, Cloud } from 'lucide-react';
+import { Home, Calendar, Brain, BookOpen, Target, LayoutDashboard, CheckSquare, Sparkles, Lock, Sun, Moon, Cloud, Bot } from 'lucide-react';
 import { formatShortDate } from '../../utils/dates';
 import { getStreak } from '../../hooks/useStreak';
 import BuildBadge from './BuildBadge';
@@ -12,6 +12,7 @@ const NAV = [
   { id: '/dashboards', label: 'Dashboards', icon: LayoutDashboard },
   { id: '/todo', label: 'To-Do', icon: CheckSquare },
   { id: '/coach', label: 'Coach', icon: Sparkles },
+  { id: '/agents', label: 'AI Agents', icon: Bot },
   { id: '/edit', label: 'Edit Mode', icon: Lock },
 ];
 

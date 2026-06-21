@@ -8,6 +8,8 @@ import CountUp from '../ui/CountUp';
 import BottomSheet from '../ui/BottomSheet';
 import BuildBadge from '../ui/BuildBadge';
 import GoalsCommand from '../goals/GoalsCommand';
+import NeuralPulse from '../agents/NeuralPulse';
+import DynamicMissions from '../agents/DynamicMissions';
 import { useToast } from '../../context/ToastContext';
 import { useStorage } from '../../hooks/useStorage';
 import { getStreak, countNonNegotiablesDone, useStreak } from '../../hooks/useStreak';
@@ -19,7 +21,6 @@ import { calcGoalProgress } from '../../data/goals';
 import { SCHEDULE_BLOCKS } from '../../data/schedule';
 import { getGreeting, formatDate, getDayIndex } from '../../utils/dates';
 import { screenEnter } from '../../utils/motion';
-import { syncToObsidian, getLastSyncLabel } from '../../utils/sync';
 import {
   IDENTITY_CHIPS, DAILY_AFFIRMATION, BODY_METRICS, ABW_TRACKER, JPMC_FOCUS,
   STUDY_PROTOCOLS, MEAL_SUMMARY, LIFE_PRIORITIES, COACH_QUICK_ACTIONS,
@@ -160,6 +161,24 @@ export default function Home({ onNavigate, editMode, openClawStatus, onSync, syn
       </div>
 
       <BuildBadge variant="prominent" className="mb-20" />
+
+      <NeuralPulse onNavigate={onNavigate} />
+
+      <div className="flex justify-between items-center mb-12">
+        <span className="text-micro">⚡ LIVE MISSIONS</span>
+        <button type="button" className="glass-pill glass-pill--active" onClick={() => onNavigate('/agents')}>
+          🤖 Agent Command →
+        </button>
+      </div>
+      <DynamicMissions
+        compact
+        onNavigate={onNavigate}
+        onDelegate={(agentId, mission) => {
+          sessionStorage.setItem('los_coach_agent', agentId);
+          sessionStorage.setItem('los_coach_prompt', `Mission: ${mission.label}. ${mission.detail}. Next 3 steps?`);
+          onNavigate('/coach');
+        }}
+      />
 
       <div className="identity-chips mb-20">
         {IDENTITY_CHIPS.map((chip) => (

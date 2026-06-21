@@ -3,8 +3,10 @@ import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import GlassCard from '../ui/GlassCard';
 import BottomSheet from '../ui/BottomSheet';
+import BuildBadge from '../ui/BuildBadge';
+import TodayPanel from '../calendar/TodayPanel';
 import { useStorage } from '../../hooks/useStorage';
-import { NON_NEGOTIABLES, EVENT_COLORS } from '../../data/defaults';
+import { EVENT_COLORS } from '../../data/defaults';
 import { dateKey, formatShortDate, getMonthGrid, addDays } from '../../utils/dates';
 import { screenEnter } from '../../utils/motion';
 
@@ -17,9 +19,12 @@ function parseHour(time) {
 }
 
 export default function CalendarScreen({ editMode }) {
-  const [view, setView] = useState('day');
+  const [view, setView] = useState('today');
   const [selected, setSelected] = useState(new Date());
   const [events, setEvents] = useStorage('events', {});
+  const [schk, setSchk] = useStorage('schk', {});
+  const [checks, setChecks] = useStorage('checks', {});
+  const [todos] = useStorage('todos', []);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [newEvent, setNewEvent] = useState({ text: '', time: '09:00', duration: 60, color: EVENT_COLORS[0], notes: '' });
 
@@ -51,21 +56,45 @@ export default function CalendarScreen({ editMode }) {
 
   return (
     <motion.div className="screen" {...screenEnter}>
-      <h1 className="text-title gradient-text mb-16">📅 Calendar</h1>
+      <div className="flex justify-between items-start mb-16">
+        <div>
+          <h1 className="text-title gradient-text">📅 Calendar</h1>
+          <p className="text-caption text-secondary">Your full day — schedule, events, non-negotiables</p>
+        </div>
+        <BuildBadge variant="compact" />
+      </div>
 
       <div className="segmented mb-20">
-        {['day', 'week', 'month', 'year'].map((v) => (
-          <button key={v} type="button" className={view === v ? 'active' : ''} onClick={() => setView(v)}>
-            {v.charAt(0).toUpperCase() + v.slice(1)}
+        {[
+          { id: 'today', label: '⭐ Today' },
+          { id: 'timeline', label: '⏰ Timeline' },
+          { id: 'week', label: 'Week' },
+          { id: 'month', label: 'Month' },
+        ].map((v) => (
+          <button key={v.id} type="button" className={view === v.id ? 'active' : ''} onClick={() => setView(v.id)}>
+            {v.label}
           </button>
         ))}
       </div>
 
-      {view === 'day' && (
+      {(view === 'today') && (
+        <TodayPanel
+          selected={selected}
+          onSelectDay={setSelected}
+          schk={schk}
+          setSchk={setSchk}
+          checks={checks}
+          setChecks={setChecks}
+          events={events}
+          todos={todos}
+        />
+      )}
+
+      {view === 'timeline' && (
         <>
           <div className="flex items-center justify-between mb-16">
             <button type="button" className="glass-pill" onClick={() => setSelected(addDays(selected, -1))}><ChevronLeft size={16} /></button>
-            <span className="text-headline">{formatShortDate(selected)}</span>
+            <span className="text-headline">{formatShortDate(selected)} — Hourly</span>
             <button type="button" className="glass-pill" onClick={() => setSelected(addDays(selected, 1))}><ChevronRight size={16} /></button>
           </div>
           <button type="button" className="glass-btn glass-btn--primary mb-16" onClick={() => setSheetOpen(true)}><Plus size={16} /> Add Event</button>
@@ -89,39 +118,31 @@ export default function CalendarScreen({ editMode }) {
               );
             })}
           </div>
-
-          {isToday && (
-            <div className="mt-20">
-              <div className="text-micro mb-12">Non-Negotiables</div>
-              <div className="nn-grid">
-                {NON_NEGOTIABLES.slice(0, 6).map((n) => (
-                  <GlassCard key={n.id} style={{ padding: '10px 12px', fontSize: 12 }}>{n.label}</GlassCard>
-                ))}
-              </div>
-            </div>
-          )}
         </>
       )}
 
       {view === 'week' && (
-        <>
-          <div className="calendar-grid mb-8">
-            {weekDays.map((d) => {
-              const dk = dateKey(d);
-              const today = dateKey() === dk;
-              const evs = events[dk] || [];
-              return (
-                <GlassCard key={dk} accentColor={today ? 'var(--indigo)' : undefined} style={{ padding: 8, minHeight: 120, cursor: 'pointer' }} onClick={() => { setSelected(d); setView('day'); }}>
-                  <div className="text-micro" style={{ color: today ? 'var(--indigo)' : undefined }}>{d.toLocaleDateString('en', { weekday: 'short' })}</div>
-                  <div className="text-headline" style={{ fontSize: 16 }}>{d.getDate()}</div>
-                  {evs.slice(0, 4).map((ev) => (
-                    <div key={ev.id} className="event-pill" style={{ background: ev.color }}>{ev.text}</div>
-                  ))}
-                </GlassCard>
-              );
-            })}
-          </div>
-        </>
+        <div className="calendar-grid mb-8">
+          {weekDays.map((d) => {
+            const dk = dateKey(d);
+            const today = dateKey() === dk;
+            const evs = events[dk] || [];
+            return (
+              <GlassCard key={dk} accentColor={today ? 'var(--indigo)' : undefined}
+                className={today ? 'calendar-week-cell--today' : ''}
+                style={{ padding: 8, minHeight: 140, cursor: 'pointer' }}
+                onClick={() => { setSelected(d); setView('today'); }}>
+                <div className="text-micro" style={{ color: today ? 'var(--indigo)' : undefined }}>{d.toLocaleDateString('en', { weekday: 'short' })}</div>
+                <div className="text-headline" style={{ fontSize: 20 }}>{d.getDate()}</div>
+                {today && <span className="today-hero__badge" style={{ marginBottom: 6 }}>TODAY</span>}
+                <div className="text-micro text-secondary">35 blocks</div>
+                {evs.slice(0, 3).map((ev) => (
+                  <div key={ev.id} className="event-pill" style={{ background: ev.color }}>{ev.text}</div>
+                ))}
+              </GlassCard>
+            );
+          })}
+        </div>
       )}
 
       {view === 'month' && (
@@ -141,35 +162,15 @@ export default function CalendarScreen({ editMode }) {
               const evs = events[dk] || [];
               const today = dateKey() === dk;
               return (
-                <div key={dk} className={`calendar-cell ${today ? 'today' : ''}`} onClick={() => { setSelected(day); setView('day'); }}>
+                <div key={dk} className={`calendar-cell ${today ? 'today' : ''}`} onClick={() => { setSelected(day); setView('today'); }}>
                   {day.getDate()}
-                  {evs.slice(0, 3).map((ev) => <div key={ev.id} className="event-pill" style={{ background: ev.color }}>{ev.text}</div>)}
-                  {evs.length > 3 && <div className="text-micro">+{evs.length - 3}</div>}
+                  {today && <div className="text-micro" style={{ color: 'var(--indigo)', fontSize: 8 }}>TODAY</div>}
+                  {evs.slice(0, 2).map((ev) => <div key={ev.id} className="event-pill" style={{ background: ev.color }}>{ev.text}</div>)}
                 </div>
               );
             })}
           </div>
         </>
-      )}
-
-      {view === 'year' && (
-        <div className="grid-3">
-          {Array.from({ length: 12 }, (_, m) => {
-            const monthDate = new Date(selected.getFullYear(), m, 1);
-            const cells = getMonthGrid(monthDate);
-            const hasEvents = cells.some((d) => d && (events[dateKey(d)] || []).length);
-            return (
-              <GlassCard key={m} hover style={{ padding: 12, cursor: 'pointer' }} onClick={() => { setSelected(monthDate); setView('month'); }}>
-                <div className="text-micro mb-8">{monthDate.toLocaleDateString('en', { month: 'short' })}</div>
-                <div className="calendar-grid" style={{ gap: 2 }}>
-                  {cells.slice(0, 35).map((d, i) => (
-                    <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: d ? (dateKey() === dateKey(d) ? 'var(--indigo)' : hasEvents ? 'var(--teal)' : 'rgba(255,255,255,0.1)') : 'transparent' }} />
-                  ))}
-                </div>
-              </GlassCard>
-            );
-          })}
-        </div>
       )}
 
       <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title={`Add Event — ${formatShortDate(selected)}`}>
@@ -179,7 +180,7 @@ export default function CalendarScreen({ editMode }) {
         <textarea className="glass-input mb-12" placeholder="Notes (optional)" value={newEvent.notes} onChange={(e) => setNewEvent({ ...newEvent, notes: e.target.value })} rows={2} />
         <div className="color-dots mb-16" style={{ display: 'flex', gap: 8 }}>
           {EVENT_COLORS.map((c) => (
-            <button key={c} type="button" className={`color-dot ${newEvent.color === c ? 'selected' : ''}`} style={{ background: c, width: 28, height: 28, borderRadius: '50%', border: newEvent.color === c ? '2px solid #fff' : 'none' }} onClick={() => setNewEvent({ ...newEvent, color: c })} />
+            <button key={c} type="button" style={{ background: c, width: 28, height: 28, borderRadius: '50%', border: newEvent.color === c ? '2px solid #fff' : 'none' }} onClick={() => setNewEvent({ ...newEvent, color: c })} />
           ))}
         </div>
         <div className="flex gap-8">

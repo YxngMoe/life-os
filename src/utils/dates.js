@@ -17,9 +17,9 @@ export function getGreeting() {
   return 'Good evening, Mohamed.';
 }
 
-export function getDayIndex() {
-  const d = new Date().getDay();
-  return d === 0 ? 6 : d - 1;
+export function getDayIndex(d = new Date()) {
+  const day = d.getDay();
+  return day === 0 ? 6 : day - 1;
 }
 
 export function timeAgo(ts) {

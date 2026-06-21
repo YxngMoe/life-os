@@ -43,8 +43,29 @@ export function useOpenClaw() {
 }
 
 export async function sendAnthropicFallback(systemPrompt, messages) {
+  // Production: Vercel /api/anthropic (key in server env — not baked into JS bundle)
+  try {
+    const res = await fetch('/api/anthropic', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ systemPrompt, messages }),
+      signal: AbortSignal.timeout(45000),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.reply) return data.reply;
+    }
+    if (res.status === 503) {
+      return 'Add ANTHROPIC_API_KEY in Vercel → Settings → Environment Variables, then Redeploy.';
+    }
+  } catch {
+    /* local dev or offline — try direct key below */
+  }
+
   const key = import.meta.env.VITE_ANTHROPIC_KEY;
-  if (!key) return 'Add VITE_ANTHROPIC_KEY to .env for AI chat.';
+  if (!key) {
+    return 'AI unavailable — set ANTHROPIC_API_KEY on Vercel (or VITE_ANTHROPIC_KEY in .env for local dev), then redeploy.';
+  }
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',

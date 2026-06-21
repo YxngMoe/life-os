@@ -53,6 +53,12 @@ const AGENT_TIPS = {
 };
 
 export function useNeuralContext({ checks = {}, schk = {}, goals = [], todos = [], agentLog = [] }) {
+  const safeGoals = Array.isArray(goals) ? goals : [];
+  const safeTodos = Array.isArray(todos) ? todos : [];
+  const safeLog = Array.isArray(agentLog) ? agentLog : [];
+  const safeChecks = checks && typeof checks === 'object' ? checks : {};
+  const safeSchk = schk && typeof schk === 'object' ? schk : {};
+
   return useMemo(() => {
     const now = new Date();
     const hour = now.getHours();
@@ -62,26 +68,26 @@ export function useNeuralContext({ checks = {}, schk = {}, goals = [], todos = [
     const nextBlock = SCHEDULE_BLOCKS[blockIdx + 1];
     const meta = getDayMeta(now);
 
-    const nnPending = NON_NEGOTIABLES.filter((n) => !checks[n.id]);
+    const nnPending = NON_NEGOTIABLES.filter((n) => !safeChecks[n.id]);
     const nnDone = NON_NEGOTIABLES.length - nnPending.length;
-    const scheduleDone = SCHEDULE_BLOCKS.filter((b) => schk[b.id]).length;
+    const scheduleDone = SCHEDULE_BLOCKS.filter((b) => safeSchk[b.id]).length;
 
-    const activeGoals = goals.filter((g) => !g.done);
+    const activeGoals = safeGoals.filter((g) => g && !g.done);
     const criticalGoals = activeGoals.filter((g) => g.priority === 'critical');
     const lowProgressCritical = criticalGoals
       .filter((g) => calcGoalProgress(g) < 40)
       .slice(0, 3);
 
-    const pendingTodos = todos.filter((t) => !t.done);
+    const pendingTodos = safeTodos.filter((t) => t && !t.done);
     const criticalTodos = pendingTodos.filter((t) => t.priority === 'critical');
 
-    const recommendedAgentId = getRecommendedAgent({ timePhase, currentBlock, criticalGoals, checks });
+    const recommendedAgentId = getRecommendedAgent({ timePhase, currentBlock, criticalGoals, checks: safeChecks });
     const recommendedAgent = AGENTS.find((a) => a.id === recommendedAgentId) || AGENTS[0];
     const tipIdx = Math.floor(now.getMinutes() / 10) % (AGENT_TIPS[recommendedAgentId]?.length || 1);
     const agentTip = AGENT_TIPS[recommendedAgentId]?.[tipIdx] || 'Execute the plan. No excuses.';
 
     const missions = [];
-    if (currentBlock && !schk[currentBlock.id]) {
+    if (currentBlock && !safeSchk[currentBlock.id]) {
       missions.push({
         id: `block-${currentBlock.id}`,
         type: 'schedule',
@@ -195,9 +201,9 @@ export function useNeuralContext({ checks = {}, schk = {}, goals = [], todos = [
       missions: missions.slice(0, 6),
       pulseItems,
       tickerMessages,
-      recentAgentActivity: (agentLog || []).slice(0, 8),
+      recentAgentActivity: safeLog.slice(0, 8),
     };
-  }, [checks, schk, goals, todos, agentLog]);
+  }, [safeChecks, safeSchk, safeGoals, safeTodos, safeLog]);
 }
 
 function routeBlockAgent(block) {

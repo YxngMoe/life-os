@@ -21,6 +21,7 @@ import { calcGoalProgress } from '../../data/goals';
 import { SCHEDULE_BLOCKS } from '../../data/schedule';
 import { getGreeting, formatDate, getDayIndex } from '../../utils/dates';
 import { screenEnter } from '../../utils/motion';
+import { getLastSyncLabel } from '../../utils/sync';
 import {
   IDENTITY_CHIPS, DAILY_AFFIRMATION, BODY_METRICS, ABW_TRACKER, JPMC_FOCUS,
   STUDY_PROTOCOLS, MEAL_SUMMARY, LIFE_PRIORITIES, COACH_QUICK_ACTIONS,

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { ANTHROPIC_MODEL } from '../constants/ai';
 
 const OPENCLAW_URL = import.meta.env.VITE_OPENCLAW_URL || 'http://67.205.162.212:18789';
 
@@ -76,7 +77,7 @@ export async function sendAnthropicFallback(systemPrompt, messages) {
       'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: ANTHROPIC_MODEL,
       max_tokens: 1000,
       system: systemPrompt,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),

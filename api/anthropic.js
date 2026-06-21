@@ -1,4 +1,7 @@
 /** Vercel serverless — Anthropic proxy (key stays server-side, not in JS bundle) */
+
+const ANTHROPIC_MODEL = 'claude-sonnet-4-6';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -26,7 +29,7 @@ export default async function handler(req, res) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: ANTHROPIC_MODEL,
         max_tokens: 1000,
         system: systemPrompt || '',
         messages: messages.map((m) => ({ role: m.role, content: m.content })),

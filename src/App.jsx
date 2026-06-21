@@ -20,6 +20,7 @@ import { useEditMode } from './hooks/useEditMode';
 import { useOpenClaw } from './hooks/useOpenClaw';
 import { initStorage, migrateLegacyKeys } from './data/storage';
 import { syncToObsidian } from './utils/sync';
+import { migrateGoals } from './data/goals';
 import {
   DEFAULT_GOALS, DEFAULT_SUBJECTS, DEFAULT_DASHBOARDS, DEFAULT_ENC, DEFAULT_QUICK_TILES,
 } from './data/defaults';
@@ -28,6 +29,7 @@ const AGENTS_INIT = ['moe', 'abw', 'islamic', 'finance', 'builder'];
 
 function initApp() {
   migrateLegacyKeys();
+  migrateGoals();
   initStorage({
     streak: { cur: 0, best: 0, last: null },
     checks: {},

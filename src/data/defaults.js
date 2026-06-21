@@ -69,18 +69,10 @@ export const GOAL_CATEGORIES = [
   { id: 'career', label: 'Career', emoji: '💻', color: '#38bdf8' },
 ];
 
-export const DEFAULT_GOALS = [
-  { id: 'g1', text: 'Reach 165 lbs lean from current 140 lbs', done: false, cat: 'fitness', created: Date.now() },
-  { id: 'g2', text: 'Bench press 315 lbs', done: false, cat: 'fitness', created: Date.now() },
-  { id: 'g3', text: 'Mile time from 7:30 to 6:00', done: false, cat: 'fitness', created: Date.now() },
-  { id: 'g4', text: 'Open ABW franchise Manchester NH', done: false, cat: 'business', created: Date.now() },
-  { id: 'g5', text: 'Save $70-80K liquid before opening', done: false, cat: 'business', created: Date.now() },
-  { id: 'g6', text: 'Open Schwab brokerage and Roth IRA', done: false, cat: 'finance', created: Date.now() },
-  { id: 'g7', text: 'Memorize Juz Amma', done: false, cat: 'islam', created: Date.now() },
-  { id: 'g8', text: 'Complete Andrew Ng then Karpathy then DeepLearning.AI', done: false, cat: 'knowledge', created: Date.now() },
-  { id: 'g9', text: 'Engagement ready August 2027 age 25', done: false, cat: 'relationships', created: Date.now() },
-  { id: 'g10', text: 'Master Spark SQL and Databricks', done: false, cat: 'career', created: Date.now() },
-];
+import { FULL_GOALS, GOAL_PRIORITIES, migrateGoals } from './goals';
+
+export { GOAL_PRIORITIES };
+export const DEFAULT_GOALS = FULL_GOALS;
 
 export const DEFAULT_ENC = {
   quotes: [

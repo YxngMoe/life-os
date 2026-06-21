@@ -1,11 +1,12 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import GlassCard from '../ui/GlassCard';
+import BuildBadge from '../ui/BuildBadge';
+import GoalsCommand from '../goals/GoalsCommand';
 import { useStorage } from '../../hooks/useStorage';
 import { DEFAULT_GOALS, GOAL_CATEGORIES } from '../../data/defaults';
 import { compressFiles } from '../../utils/compress';
 import { screenEnter } from '../../utils/motion';
-import BuildBadge from '../ui/BuildBadge';
 import {
   IDENTITY, IDENTITY_CHIPS, BODY_METRICS, ABW_TRACKER, JPMC_FOCUS,
   STUDY_PROTOCOLS, MEAL_SUMMARY, SUPPLEMENTS, LIFE_PRIORITIES,
@@ -29,11 +30,6 @@ export default function LifeScreen({ editMode }) {
   const [goalCat, setGoalCat] = useState('fitness');
   const fileRef = useRef(null);
 
-  const grouped = GOAL_CATEGORIES.map((cat) => ({
-    ...cat,
-    items: goals.filter((g) => g.cat === cat.id),
-  })).filter((g) => g.items.length > 0);
-
   async function handlePhotos(e) {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -41,11 +37,31 @@ export default function LifeScreen({ editMode }) {
     setVb((prev) => [...prev, ...compressed]);
   }
 
+  function addGoal() {
+    if (!newGoal.trim()) return;
+    setGoals([...goals, {
+      id: `custom-${Date.now()}`,
+      text: newGoal.trim(),
+      done: false,
+      cat: goalCat,
+      progress: 0,
+      priority: 'normal',
+      deadline: '',
+      why: '',
+      milestones: [],
+      created: Date.now(),
+    }]);
+    setNewGoal('');
+  }
+
   return (
     <motion.div className="screen" {...screenEnter}>
-      <div className="screen-header">
-        <h1 className="text-title gradient-text">🎯 Life</h1>
-        <p className="text-caption text-secondary">Goals · Dua · Vision</p>
+      <div className="screen-header flex justify-between items-start">
+        <div>
+          <h1 className="text-title gradient-text">🎯 Life</h1>
+          <p className="text-caption text-secondary">{goals.length} goals · Command center for your entire life</p>
+        </div>
+        <BuildBadge variant="compact" />
       </div>
 
       <div className="segmented mb-16">
@@ -59,7 +75,7 @@ export default function LifeScreen({ editMode }) {
       {tab === 'goals' && (
         <>
           <GlassCard style={{ padding: 16, marginBottom: 16 }}>
-            <textarea className="glass-input mb-12" placeholder="Write a goal..." value={newGoal} onChange={(e) => setNewGoal(e.target.value)} rows={3} />
+            <textarea className="glass-input mb-12" placeholder="Add a custom goal..." value={newGoal} onChange={(e) => setNewGoal(e.target.value)} rows={2} />
             <div className="agent-pills mb-12">
               {GOAL_CATEGORIES.map((c) => (
                 <button key={c.id} type="button" className={`glass-pill ${goalCat === c.id ? 'glass-pill--active' : ''}`} style={goalCat === c.id ? { borderColor: c.color, color: c.color } : {}} onClick={() => setGoalCat(c.id)}>
@@ -69,41 +85,16 @@ export default function LifeScreen({ editMode }) {
             </div>
             <div className="flex gap-8">
               <button type="button" className="glass-btn" onClick={() => setNewGoal(GOAL_TEMPLATE)}>📋 Template</button>
-              <button type="button" className="glass-btn glass-btn--primary" onClick={() => {
-                if (!newGoal.trim()) return;
-                setGoals([...goals, { id: Date.now().toString(), text: newGoal.trim(), done: false, cat: goalCat, created: Date.now() }]);
-                setNewGoal('');
-              }}>Add Goal</button>
+              <button type="button" className="glass-btn glass-btn--primary" onClick={addGoal}>Add Goal</button>
             </div>
           </GlassCard>
-
-          {grouped.map((group) => (
-            <div key={group.id} className="mb-16">
-              <div className="flex items-center gap-8 mb-12">
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: group.color }} />
-                <span className="text-caption">{group.label} ({group.items.length})</span>
-              </div>
-              {group.items.map((g) => (
-                <GlassCard key={g.id} accentColor={group.color} style={{ padding: 14, marginBottom: 8, opacity: g.done ? 0.4 : 1 }}>
-                  <div className="flex gap-12 items-start">
-                    <div
-                      className={`check-square ${g.done ? 'check-square--done' : ''}`}
-                      style={{ '--check-color': group.color, cursor: 'pointer' }}
-                      onClick={() => setGoals(goals.map((x) => x.id === g.id ? { ...x, done: !x.done } : x))}
-                    >✓</div>
-                    <div style={{ flex: 1, whiteSpace: 'pre-wrap', textDecoration: g.done ? 'line-through' : 'none', fontSize: 14 }}>{g.text}</div>
-                    <button type="button" onClick={() => setGoals(goals.filter((x) => x.id !== g.id))} style={{ background: 'none', border: 'none', color: 'var(--accent-rose)', cursor: 'pointer' }}>×</button>
-                  </div>
-                </GlassCard>
-              ))}
-            </div>
-          ))}
+          <GoalsCommand goals={goals} setGoals={setGoals} editMode={editMode} />
         </>
       )}
 
       {tab === 'dua' && (
         <>
-          <GlassCard accentColor="var(--accent-amber)" style={{ padding: 14, marginBottom: 12, background: 'rgba(251,191,36,0.08)' }}>
+          <GlassCard accentColor="var(--amber)" style={{ padding: 14, marginBottom: 12, background: 'rgba(251,191,36,0.08)' }}>
             Read after Fajr and Tahajjud. Every word slowly.
           </GlassCard>
           <textarea

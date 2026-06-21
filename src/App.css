@@ -270,3 +270,41 @@ body{font-family:-apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue",s
 .dash-kv-input{flex:1;min-width:80px;padding:8px 12px!important;font-size:13px!important}
 .dash-section--done{opacity:0.85}
 .focus-row--today{background:rgba(99,102,241,0.1);border-radius:10px;padding:6px 8px;margin:-2px -8px}
+
+/* Goals Command Center */
+.goals-command{padding-bottom:24px}
+.goals-hero{background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(52,211,153,0.06))}
+.goals-orbit{display:flex;flex-wrap:wrap;gap:8px}
+.goals-orbit__chip{display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:14px;border:1px solid var(--border);background:var(--glass);cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;color:var(--text2);transition:all 0.2s}
+.goals-orbit__chip--active{border-color:var(--orbit-color,var(--indigo));background:color-mix(in srgb,var(--orbit-color) 15%,transparent);color:var(--orbit-color);box-shadow:0 0 16px color-mix(in srgb,var(--orbit-color) 30%,transparent)}
+.goals-orbit__label{max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.goals-orbit__pct{font-size:10px;opacity:0.8}
+.goal-card{border:1px solid var(--border)}
+.goal-card--critical{border-color:rgba(248,113,113,0.35);box-shadow:0 0 20px rgba(248,113,113,0.08)}
+.goal-card--done{opacity:0.55}
+.goal-card__head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border:none;background:transparent;color:inherit;cursor:pointer;font-family:inherit;text-align:left}
+.goal-card__left{display:flex;align-items:flex-start;gap:12px;flex:1;min-width:0}
+.goal-card__emoji{font-size:22px;flex-shrink:0}
+.goal-card__title{font-size:14px;font-weight:600;line-height:1.4;text-align:left}
+.goal-card__meta{display:flex;gap:6px;align-items:center;margin-top:4px;flex-wrap:wrap}
+.goal-card__right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.goal-card__body{padding:0 16px 16px;border-top:1px solid rgba(255,255,255,0.05)}
+.goal-why{font-size:12px;color:var(--text2);line-height:1.55;margin-bottom:12px;padding:10px;border-radius:10px;background:rgba(99,102,241,0.08)}
+.goal-metric-row{margin-bottom:12px}
+.goal-metric-input{width:80px!important;padding:6px 10px!important;text-align:center}
+.goal-milestones{margin-top:8px}
+.goal-milestone-row{display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer}
+.life-timeline{display:grid;gap:16px}
+@media(min-width:768px){.life-timeline{grid-template-columns:repeat(2,1fr)}}
+.life-timeline__year{padding:12px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid var(--border)}
+.life-timeline__label{font-size:24px;font-weight:900;color:var(--violet);opacity:0.5;line-height:1}
+
+/* Mission Queue (Todo) */
+.todo-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media(max-width:600px){.todo-stats{grid-template-columns:repeat(2,1fr)}}
+.todo-row--critical{border-color:rgba(248,113,113,0.3)!important}
+.todo-row--overdue{box-shadow:0 0 12px rgba(251,146,60,0.12)}
+
+/* Coach goals bar */
+.coach-goals-bar{display:flex;gap:10px;align-items:stretch}
+@media(max-width:600px){.coach-goals-bar{flex-direction:column}}

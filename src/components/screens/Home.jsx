@@ -7,6 +7,7 @@ import LiveClock from '../ui/LiveClock';
 import CountUp from '../ui/CountUp';
 import BottomSheet from '../ui/BottomSheet';
 import BuildBadge from '../ui/BuildBadge';
+import GoalsCommand from '../goals/GoalsCommand';
 import { useToast } from '../../context/ToastContext';
 import { useStorage } from '../../hooks/useStorage';
 import { getStreak, countNonNegotiablesDone, useStreak } from '../../hooks/useStreak';
@@ -14,6 +15,7 @@ import {
   NON_NEGOTIABLES, NN_COLORS, DEFAULT_QUICK_TILES, LIFT_DAYS, ISLAMIC_TOPICS,
   DEFAULT_GOALS, DEFAULT_ENC, AGENTS, TODO_CATS,
 } from '../../data/defaults';
+import { calcGoalProgress } from '../../data/goals';
 import { SCHEDULE_BLOCKS } from '../../data/schedule';
 import { getGreeting, formatDate, getDayIndex } from '../../utils/dates';
 import { screenEnter } from '../../utils/motion';
@@ -77,7 +79,7 @@ export default function Home({ onNavigate, editMode, openClawStatus, onSync, syn
   const [checks, setChecks] = useStorage('checks', {});
   const [schk, setSchk] = useStorage('schk', {});
   const [todos, setTodos] = useStorage('todos', []);
-  const [goals] = useStorage('goals', DEFAULT_GOALS);
+  const [goals, setGoals] = useStorage('goals', DEFAULT_GOALS);
   const [tiles] = useStorage('qa', DEFAULT_QUICK_TILES);
   const [agentLog] = useStorage('agent_log', []);
   const [todoExpanded, setTodoExpanded] = useState(false);
@@ -296,6 +298,14 @@ export default function Home({ onNavigate, editMode, openClawStatus, onSync, syn
         ))}
       </div>
 
+      <GlassCard index={14} className="mission-card mb-24" style={{ padding: '16px 18px' }}>
+        <div className="flex justify-between mb-12">
+          <span className="text-micro">🎯 Goals Command — {goals.length} total</span>
+          <button type="button" className="glass-pill glass-pill--active" onClick={() => onNavigate('/life')}>Full command →</button>
+        </div>
+        <GoalsCommand goals={goals} setGoals={setGoals} editMode={false} compact />
+      </GlassCard>
+
       <GlassCard index={3} className="mb-20" accentColor="var(--amber)" style={{ padding: '18px 20px', position: 'relative' }}>
         <span className="quote-watermark">&ldquo;</span>
         <div className="text-micro" style={{ color: 'var(--amber)', marginBottom: 10 }}>✦ Today</div>
@@ -366,13 +376,14 @@ export default function Home({ onNavigate, editMode, openClawStatus, onSync, syn
 
       <GlassCard index={6} className="mb-20" style={{ padding: '16px 18px' }}>
         <div className="flex justify-between mb-12">
-          <span className="text-micro">Active Goals</span>
-          <button type="button" className="glass-pill glass-pill--active" onClick={() => onNavigate('/life')}>See all →</button>
+          <span className="text-micro">Critical Goals</span>
+          <button type="button" className="glass-pill glass-pill--active" onClick={() => onNavigate('/life')}>All {goals.length} →</button>
         </div>
-        {activeGoals.slice(0, 4).map((g) => (
-          <div key={g.id} className="focus-row">
-            <span className="focus-dot" style={{ background: 'var(--indigo)' }} />
-            <span style={{ fontSize: 14 }}>{g.text.slice(0, 80)}{g.text.length > 80 ? '…' : ''}</span>
+        {goals.filter((g) => !g.done && g.priority === 'critical').slice(0, 6).map((g) => (
+          <div key={g.id} className="focus-row" style={{ cursor: 'pointer' }} onClick={() => onNavigate('/life')}>
+            <span className="focus-dot" style={{ background: 'var(--rose)' }} />
+            <span style={{ fontSize: 14, flex: 1 }}>{g.text.slice(0, 70)}{g.text.length > 70 ? '…' : ''}</span>
+            <span className="glass-pill" style={{ fontSize: 9 }}>{calcGoalProgress(g)}%</span>
           </div>
         ))}
       </GlassCard>

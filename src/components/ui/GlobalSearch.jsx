@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Search, X } from 'lucide-react';
 import { lsGet } from '../../data/storage';
 import { DEFAULT_GOALS, DEFAULT_SUBJECTS } from '../../data/defaults';
+import { LIFE_MILESTONES } from '../../data/goals';
 import { getSubjectNotes } from '../../data/storage';
 
 export default function GlobalSearch({ open, onClose, onNavigate }) {
@@ -32,6 +33,11 @@ export default function GlobalSearch({ open, onClose, onNavigate }) {
     });
     (lsGet('goals', DEFAULT_GOALS) || []).forEach((g) => {
       if (g.text?.toLowerCase().includes(term)) out.push({ type: 'goal', label: g.text.slice(0, 80), dest: '/life' });
+    });
+    LIFE_MILESTONES.forEach((m) => {
+      m.items.forEach((item) => {
+        if (item.toLowerCase().includes(term)) out.push({ type: 'milestone', label: `${m.year}: ${item}`, dest: '/life' });
+      });
     });
     (lsGet('subjects', DEFAULT_SUBJECTS) || []).forEach((s) => {
       if (s.n?.toLowerCase().includes(term)) out.push({ type: 'subject', label: s.n, dest: '/brain' });

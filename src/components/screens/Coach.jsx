@@ -1,13 +1,15 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Mic, Send } from 'lucide-react';
+import { Mic, Send, Target, Zap } from 'lucide-react';
 import GlassCard from '../ui/GlassCard';
 import AgentPills from '../ui/AgentPills';
+import CountUp from '../ui/CountUp';
 import { useStorage } from '../../hooks/useStorage';
 import { useToast } from '../../context/ToastContext';
 import { AGENTS, AGENT_PROMPTS, DEFAULT_SUBJECTS } from '../../data/defaults';
 import { getAgentChat, setAgentChat, getSubjectNotes, lsGet, lsSet } from '../../data/storage';
 import { useOpenClaw, sendAnthropicFallback } from '../../hooks/useOpenClaw';
+import { calcGoalProgress, getGoalsStats } from '../../data/goals';
 import { screenEnter } from '../../utils/motion';
 
 const MODES = [
@@ -21,8 +23,23 @@ const MODES = [
 const QUICK = ['Focus for today?', 'Quiz me on what I studied', 'ABW progress check', 'Morning motivation', 'Meal plan check', 'Feynman: '];
 const INTERVIEW_TYPES = ['JPMC Behavioral', 'General Tech', 'ABW Pitch Practice', 'Communication Coach'];
 
+function buildGoalBrief(goals) {
+  const stats = getGoalsStats(goals);
+  const critical = goals.filter((g) => !g.done && g.priority === 'critical').slice(0, 5);
+  const lines = critical.map((g) => `- ${g.text} (${calcGoalProgress(g)}%)`);
+  return `Goals briefing: ${stats.active} active, ${stats.critical} critical, ${stats.avgProgress}% avg progress.\nCritical:\n${lines.join('\n') || 'none'}`;
+}
+
 export default function CoachScreen({ onNavigate }) {
   const toast = useToast();
+  const [goals] = useStorage('goals', []);
+  const goalStats = useMemo(() => getGoalsStats(goals), [goals]);
+  const criticalGoals = useMemo(() => goals.filter((g) => !g.done && g.priority === 'critical').slice(0, 4), [goals]);
+  const dynamicQuick = useMemo(() => {
+    const chips = ['Goals briefing', 'What should I do right now?', 'Critical goals check-in'];
+    criticalGoals.forEach((g) => chips.push(`Progress on: ${g.text.slice(0, 40)}`));
+    return [...chips, ...QUICK];
+  }, [criticalGoals]);
   const [mode, setMode] = useState('chat');
   const [agent, setAgent] = useState('moe');
   const [input, setInput] = useState('');
@@ -110,6 +127,25 @@ export default function CoachScreen({ onNavigate }) {
 
       <AgentPills active={agent} onSelect={setAgent} />
 
+      <div className="coach-goals-bar mb-16">
+        <GlassCard accentColor="#6366f1" style={{ padding: '12px 16px', flex: 1 }}>
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-8">
+              <Target size={16} color="#6366f1" />
+              <span className="text-caption">Goals linked</span>
+            </div>
+            <div className="flex gap-12 text-micro">
+              <span><CountUp value={goalStats.active} /> active</span>
+              <span style={{ color: '#f87171' }}><CountUp value={goalStats.critical} /> critical</span>
+              <span style={{ color: '#34d399' }}>{goalStats.avgProgress}% avg</span>
+            </div>
+          </div>
+        </GlassCard>
+        <button type="button" className="glass-btn glass-btn--primary" style={{ flexShrink: 0 }} onClick={() => send(buildGoalBrief(goals), 'Goals briefing')}>
+          <Zap size={14} /> Brief
+        </button>
+      </div>
+
       <div className="segmented mb-16">
         {MODES.map((m) => (
           <button key={m.id} type="button" className={mode === m.id ? 'active' : ''} onClick={() => setMode(m.id)}>{m.label}</button>
@@ -177,7 +213,13 @@ export default function CoachScreen({ onNavigate }) {
           <div className="chat-messages flex-1">
             {messages.length === 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {QUICK.map((p) => <button key={p} type="button" className="glass-pill" onClick={() => send(p)}>{p}</button>)}
+                {dynamicQuick.map((p) => (
+                  <button key={p} type="button" className="glass-pill" onClick={() => {
+                    if (p === 'Goals briefing') send(buildGoalBrief(goals), 'Goals briefing');
+                    else if (p === 'Critical goals check-in') send(`Review my ${goalStats.critical} critical goals. For each one: current status, next action, and whether I'm on track.`, 'Critical check-in');
+                    else send(p);
+                  }}>{p}</button>
+                ))}
               </div>
             )}
             {messages.map((m, i) => (

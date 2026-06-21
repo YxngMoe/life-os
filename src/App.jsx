@@ -5,6 +5,7 @@ import TabBar from './components/ui/TabBar';
 import Sidebar from './components/ui/Sidebar';
 import AmbientGlow from './components/ui/AmbientGlow';
 import GlobalSearch from './components/ui/GlobalSearch';
+import BuildBadge from './components/ui/BuildBadge';
 import Home from './components/screens/Home';
 import CalendarScreen from './components/screens/Calendar';
 import BrainScreen from './components/screens/Brain';
@@ -145,6 +146,10 @@ function AppInner() {
           onSync={handleSync} syncState={syncState} editMode={editMode} />
         <main className="app-main" onClick={touch}>{renderScreen()}</main>
         <TabBar screen={screen} onNavigate={navigate} editMode={editMode} />
+      </div>
+
+      <div className="mobile-build-strip">
+        <BuildBadge variant="compact" />
       </div>
 
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} onNavigate={navigate} />

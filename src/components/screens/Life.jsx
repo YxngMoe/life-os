@@ -5,6 +5,11 @@ import { useStorage } from '../../hooks/useStorage';
 import { DEFAULT_GOALS, GOAL_CATEGORIES } from '../../data/defaults';
 import { compressFiles } from '../../utils/compress';
 import { screenEnter } from '../../utils/motion';
+import BuildBadge from '../ui/BuildBadge';
+import {
+  IDENTITY, IDENTITY_CHIPS, BODY_METRICS, ABW_TRACKER, JPMC_FOCUS,
+  STUDY_PROTOCOLS, MEAL_SUMMARY, SUPPLEMENTS, LIFE_PRIORITIES,
+} from '../../data/lifeContext';
 
 const GOAL_TEMPLATE = `What: 
 Why (the real reason): 
@@ -44,9 +49,9 @@ export default function LifeScreen({ editMode }) {
       </div>
 
       <div className="segmented mb-16">
-        {['goals', 'dua', 'vision'].map((t) => (
+        {['goals', 'dua', 'vision', 'context'].map((t) => (
           <button key={t} type="button" className={tab === t ? 'active' : ''} onClick={() => setTab(t)}>
-            {t === 'goals' && '🎯 Goals'}{t === 'dua' && '🤲 Dua'}{t === 'vision' && '🌟 Vision'}
+            {t === 'goals' && '🎯 Goals'}{t === 'dua' && '🤲 Dua'}{t === 'vision' && '🌟 Vision'}{t === 'context' && '📋 Context'}
           </button>
         ))}
       </div>
@@ -133,6 +138,76 @@ export default function LifeScreen({ editMode }) {
               ))}
             </div>
           )}
+        </>
+      )}
+
+      {tab === 'context' && (
+        <>
+          <BuildBadge variant="prominent" className="mb-16" />
+          <GlassCard accentColor="var(--indigo)" style={{ padding: 16, marginBottom: 16 }}>
+            <div className="text-micro mb-12">Who I Am</div>
+            <div className="identity-chips mb-12">
+              {IDENTITY_CHIPS.map((c) => (
+                <span key={c.label} className="identity-chip" style={{ '--chip-color': c.color }}>{c.emoji} {c.label}</span>
+              ))}
+            </div>
+            <div className="grid-2" style={{ gap: 8, fontSize: 13 }}>
+              <div><span className="text-tertiary">Age</span> · {IDENTITY.age} ({IDENTITY.birthday})</div>
+              <div><span className="text-tertiary">Base</span> · {IDENTITY.base}</div>
+              <div><span className="text-tertiary">Job</span> · {IDENTITY.job} @ {IDENTITY.company}</div>
+              <div><span className="text-tertiary">Office</span> · {IDENTITY.office}</div>
+              <div><span className="text-tertiary">Partner</span> · {IDENTITY.partner}</div>
+              <div><span className="text-tertiary">Living</span> · {IDENTITY.living}</div>
+            </div>
+          </GlassCard>
+
+          <GlassCard style={{ padding: 16, marginBottom: 16 }}>
+            <div className="text-micro mb-12">Body & Medical</div>
+            <p className="text-caption mb-8">Weight: {BODY_METRICS.weightCurrent} → {BODY_METRICS.weightTarget} {BODY_METRICS.weightUnit} · Bench {BODY_METRICS.benchGoal} · Mile {BODY_METRICS.mileCurrent} → {BODY_METRICS.mileGoal}</p>
+            {BODY_METRICS.medical.map((m) => <div key={m} className="focus-row"><span className="focus-dot" style={{ background: 'var(--rose)' }} />{m}</div>)}
+          </GlassCard>
+
+          <GlassCard style={{ padding: 16, marginBottom: 16 }}>
+            <div className="text-micro mb-12">🍗 ABW — {ABW_TRACKER.location}</div>
+            <p className="text-caption text-secondary mb-8">Startup {ABW_TRACKER.startupRange} · Target {ABW_TRACKER.capitalTarget}</p>
+            {ABW_TRACKER.milestones.map((m) => (
+              <div key={m.id} className="focus-row"><span className="focus-dot" style={{ background: 'var(--orange)' }} />{m.label}</div>
+            ))}
+          </GlassCard>
+
+          <GlassCard style={{ padding: 16, marginBottom: 16 }}>
+            <div className="text-micro mb-12">💻 JPMC Focus</div>
+            {JPMC_FOCUS.weekly.map((w) => <div key={w} className="focus-row"><span className="focus-dot" style={{ background: 'var(--cyan)' }} />{w}</div>)}
+          </GlassCard>
+
+          <GlassCard style={{ padding: 16, marginBottom: 16 }}>
+            <div className="text-micro mb-12">Study Protocols</div>
+            {STUDY_PROTOCOLS.map((p) => (
+              <div key={p.title} className="mb-12">
+                <div className="text-headline" style={{ fontSize: 14 }}>{p.icon} {p.title}</div>
+                <p className="text-caption text-secondary">{p.desc}</p>
+              </div>
+            ))}
+          </GlassCard>
+
+          <GlassCard style={{ padding: 16, marginBottom: 16 }}>
+            <div className="text-micro mb-12">9 Meals + Supplements</div>
+            {MEAL_SUMMARY.map((m) => (
+              <div key={m.time} className="focus-row"><span className="text-micro" style={{ minWidth: 44, color: 'var(--amber)' }}>{m.time}</span>{m.meal}</div>
+            ))}
+            <div className="text-micro mt-12 mb-8">Morning</div>
+            <div className="flex gap-8" style={{ flexWrap: 'wrap' }}>{SUPPLEMENTS.morning.map((s) => <span key={s} className="glass-pill" style={{ fontSize: 10 }}>{s}</span>)}</div>
+          </GlassCard>
+
+          <GlassCard style={{ padding: 16 }}>
+            <div className="text-micro mb-12">Life Priorities</div>
+            {LIFE_PRIORITIES.map((p) => (
+              <div key={p.rank} className="focus-row">
+                <span className="glass-pill glass-pill--active" style={{ fontSize: 10 }}>#{p.rank}</span>
+                <span style={{ fontSize: 13 }}><strong>{p.area}</strong> — {p.focus}</span>
+              </div>
+            ))}
+          </GlassCard>
         </>
       )}
     </motion.div>

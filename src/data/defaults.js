@@ -95,6 +95,13 @@ export const DEFAULT_ENC = {
     { id: 'q9', t: 'Strong in body. Sharp in mind. Grounded in faith.', a: 'Self' },
     { id: 'q10', t: 'The best of people are most beneficial to people.', a: 'Hadith' },
     { id: 'q11', t: 'Speak good or remain silent.', a: 'Hadith, Bukhari' },
+    { id: 'q12', t: 'Verily, with hardship comes ease.', a: 'Quran 94:6' },
+    { id: 'q13', t: 'The blueprint is not the building.', a: 'Self — anti-overplanning' },
+    { id: 'q14', t: 'Whoever puts his trust in Allah, He will be enough for him.', a: 'Quran 65:3' },
+    { id: 'q15', t: 'Take advantage of five before five: your youth before old age.', a: 'Hadith' },
+    { id: 'q16', t: 'Grind now. Glory later.', a: 'Self' },
+    { id: 'q17', t: 'He who knows himself knows his Lord.', a: 'Islamic wisdom' },
+    { id: 'q18', t: 'The struggle to remember IS the encoding.', a: 'Neuroscience' },
   ],
   tv: [
     { id: 'tv1', title: 'Attack on Titan', rating: '10/10', note: 'Greatest story ever told' },
@@ -102,30 +109,48 @@ export const DEFAULT_ENC = {
     { id: 'tv3', title: 'Naruto', rating: '9/10', note: 'Grew up on it' },
     { id: 'tv4', title: 'One Piece', rating: '9/10', note: 'Nakama energy' },
     { id: 'tv5', title: 'Breaking Bad', rating: '10/10', note: 'Character study masterclass' },
+    { id: 'tv6', title: 'The Wire', rating: '9/10', note: 'Systems thinking' },
+    { id: 'tv7', title: 'Succession', rating: '9/10', note: 'Power dynamics' },
+    { id: 'tv8', title: 'Vinland Saga', rating: '10/10', note: 'Transformation arc' },
   ],
   mov: [
     { id: 'm1', title: 'The Dark Knight', rating: '10/10', note: 'Heath Ledger' },
     { id: 'm2', title: 'Malcolm X', rating: '10/10', note: 'Identity and transformation' },
     { id: 'm3', title: 'Gladiator', rating: '9/10', note: 'Honor under pressure' },
+    { id: 'm4', title: 'Interstellar', rating: '10/10', note: 'Time, love, sacrifice' },
+    { id: 'm5', title: 'The Pursuit of Happyness', rating: '9/10', note: 'Relentless discipline' },
+    { id: 'm6', title: 'Rocky', rating: '9/10', note: 'Underdog mentality' },
   ],
   mus: [
     { id: 'mu1', title: "God's Plan", artist: 'Drake', note: 'Motivational' },
     { id: 'mu2', title: 'HUMBLE.', artist: 'Kendrick Lamar', note: 'Mentality' },
     { id: 'mu3', title: 'Love Yourz', artist: 'J. Cole', note: 'Gratitude' },
+    { id: 'mu4', title: 'Alright', artist: 'Kendrick Lamar', note: 'Resilience' },
+    { id: 'mu5', title: 'Dreams and Nightmares', artist: 'Meek Mill', note: 'Intro energy' },
   ],
   rap: [
-    { id: 'r1', name: 'Kendrick Lamar', note: 'GOAT' },
+    { id: 'r1', name: 'Kendrick Lamar', note: 'GOAT — storytelling + depth' },
     { id: 'r2', name: 'J. Cole', note: 'Introspection' },
     { id: 'r3', name: 'Drake', note: 'Consistency' },
+    { id: 'r4', name: 'Meek Mill', note: 'Philly energy' },
+    { id: 'r5', name: 'Nas', note: 'Lyrical mastery' },
   ],
   food: [
     { id: 'f1', category: 'Sudanese', item: 'Ful Medames', note: 'Home, first love' },
     { id: 'f2', category: 'Daily', item: 'Rotisserie Chicken (skin off)', note: 'Always PSC rule' },
+    { id: 'f3', category: 'Daily', item: 'White rice + oats', note: 'UC-safe carbs only' },
+    { id: 'f4', category: 'Daily', item: 'Dates + bananas', note: 'Training fuel' },
+    { id: 'f5', category: 'Sudanese', item: 'Kisra', note: 'Family staple' },
+    { id: 'f6', category: 'Halal', item: 'Tuna packets', note: 'Monitor EOE' },
   ],
   books: [
     { id: 'b1', title: 'Grinding It Out', author: 'Ray Kroc', note: 'ABW blueprint' },
     { id: 'b2', title: 'Atomic Habits', author: 'James Clear', note: 'Identity-based change' },
     { id: 'b3', title: "Can't Hurt Me", author: 'David Goggins', note: 'Mental toughness' },
+    { id: 'b4', title: 'Deep Work', author: 'Cal Newport', note: 'Focus protocol' },
+    { id: 'b5', title: 'The Prophet', author: 'Kahlil Gibran', note: 'Wisdom' },
+    { id: 'b6', title: 'Zero to One', author: 'Peter Thiel', note: 'Startup thinking' },
+    { id: 'b7', title: 'The Alchemist', author: 'Paulo Coelho', note: 'Purpose journey' },
   ],
 };
 
@@ -160,15 +185,44 @@ export function getDefaultDashboardComponents(dashId) {
   if (dashId === 'fin') {
     return [
       { id: 'dc1', type: 'checklist', title: 'Daily Trading Routine', items: ['Open Stocktwits', 'Check SPY QQQ IWM', 'FOMC/CPI — observe only', 'Write thesis before trade', '50-min hard timer'].map((text, i) => ({ text, done: false, id: i })) },
-      { id: 'dc2', type: 'note', title: 'Trading Rules', content: '1. Never trade without thesis\n2. Stop loss non-negotiable\n3. Max 1-2% risk per trade' },
+      { id: 'dc2', type: 'note', title: 'Trading Rules', content: '1. Never trade without thesis\n2. Stop loss non-negotiable\n3. Max 1-2% risk per trade\n4. Halal instruments only' },
       { id: 'dc3', type: 'metric', title: 'ABW Fund Saved', value: '$0' },
       { id: 'dc4', type: 'metric', title: 'Target Capital', value: '$75,000' },
     ];
   }
   if (dashId === 'abw') {
     return [
-      { id: 'dc1', type: 'checklist', title: 'Month 1 — Foundation', items: ['Review FDD', 'Calculate startup costs', 'Build Year 1 P&L', 'Contact Steve'] },
+      { id: 'dc1', type: 'checklist', title: 'Month 1 — Foundation', items: ['Review FDD', 'Calculate startup costs', 'Build Year 1 P&L', 'Contact Steve weekly', 'Site visit Manchester NH'].map((text, i) => ({ text, done: false, id: i })) },
       { id: 'dc2', type: 'metric', title: 'ABW Fund Saved', value: '$0' },
+      { id: 'dc3', type: 'metric', title: 'Startup Range', value: '$150K–$200K' },
+      { id: 'dc4', type: 'note', title: 'Location', content: 'American Best Wings — Manchester, NH\nContact: Steve\nTarget liquid: $70-80K before opening' },
+    ];
+  }
+  if (dashId === 'fit') {
+    return [
+      { id: 'dc1', type: 'metric', title: 'Weight', value: '140 lbs → 165' },
+      { id: 'dc2', type: 'metric', title: 'Bench Goal', value: '315 lbs' },
+      { id: 'dc3', type: 'metric', title: 'Mile Time', value: '7:30 → 6:00' },
+      { id: 'dc4', type: 'checklist', title: 'Daily Physical', items: ['100 pushups outside', 'Lift session', 'Voice routine', 'Cold plunge + hot tub', 'Evening basketball'].map((text, i) => ({ text, done: false, id: i })) },
+    ];
+  }
+  if (dashId === 'islam') {
+    return [
+      { id: 'dc1', type: 'checklist', title: 'Daily Islamic', items: ['Fajr on time', 'Ultimate Dua every word', 'Quran from memory', 'All 5 prayers', 'Islamic study block'].map((text, i) => ({ text, done: false, id: i })) },
+      { id: 'dc2', type: 'note', title: 'Study Rotation', content: 'Mon: Aqeedah/Hadith\nTue: Tafsir\nWed: Seerah\nThu: Hadith Sciences\nFri: Quran Arabic\nSat: Seerah/Tafsir\nSun: Weekly Review' },
+      { id: 'dc3', type: 'metric', title: 'Juz Amma', value: 'In progress' },
+    ];
+  }
+  if (dashId === 'essay') {
+    return [
+      { id: 'dc1', type: 'checklist', title: 'Writing Routine', items: ['Morning journal', 'Night journal', '500 words Substack draft', 'Story in own words'].map((text, i) => ({ text, done: false, id: i })) },
+      { id: 'dc2', type: 'note', title: 'Voice', content: 'Daily voice training — lisp correction, articulation, elevator pitch 30 sec.' },
+    ];
+  }
+  if (dashId === 'vocab') {
+    return [
+      { id: 'dc1', type: 'checklist', title: 'Daily Vocab', items: ['Morning journal vocab', 'Root/prefix/suffix', 'Quizlet review', 'Night journal vocab'].map((text, i) => ({ text, done: false, id: i })) },
+      { id: 'dc2', type: 'note', title: 'Method', content: 'Root-based etymology. Always define in own words. Connect to Arabic roots when possible.' },
     ];
   }
   return [];

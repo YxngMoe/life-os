@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { PIN } from '../../data/defaults';
 import AmbientGlow from './AmbientGlow';
+import BuildBadge from './BuildBadge';
 
 export default function PinLock({ onUnlock }) {
   const [digits, setDigits] = useState([]);
@@ -61,6 +62,9 @@ export default function PinLock({ onUnlock }) {
           )}
         </div>
         {error && <p style={{ color: 'var(--rose)', fontSize: 13, marginTop: 16, fontWeight: 600 }}>Incorrect PIN</p>}
+        <div style={{ marginTop: 24 }}>
+          <BuildBadge variant="compact" />
+        </div>
       </motion.div>
     </div>
   );

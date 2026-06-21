@@ -1,6 +1,7 @@
 import { Home, Calendar, Brain, BookOpen, Target, LayoutDashboard, CheckSquare, Sparkles, Lock, Sun, Moon, Cloud } from 'lucide-react';
 import { formatShortDate } from '../../utils/dates';
 import { getStreak } from '../../hooks/useStreak';
+import BuildBadge from './BuildBadge';
 
 const NAV = [
   { id: '/home', label: 'Home', icon: Home },
@@ -35,6 +36,7 @@ export default function Sidebar({ screen, onNavigate, lightMode, onToggleTheme, 
         ))}
       </nav>
       <div className="sidebar-footer">
+        <BuildBadge variant="compact" className="mb-12" />
         <div className="text-caption text-secondary mb-8">{formatShortDate(new Date())}</div>
         <div className="text-caption mb-12">🔥 {streak.cur || 0} day streak</div>
         <div className="flex gap-8">

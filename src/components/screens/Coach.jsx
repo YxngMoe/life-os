@@ -167,7 +167,7 @@ export default function CoachScreen({ onNavigate }) {
 
       {aiDiag && !aiDiag.hasOpenClawToken && (
         <div className="offline-banner mb-12" style={{ position: 'relative', top: 0, borderColor: 'rgba(251,191,36,0.4)', color: '#fbbf24' }}>
-          {aiDiag.host === 'netlify' ? 'Netlify' : 'This host'} has no OPENCLAW_GATEWAY_TOKEN — Vercel env vars are separate. Add the token on {aiDiag.host || 'your host'}, redeploy.
+          OpenClaw token missing in lib/secrets.js — paste OPENCLAW_GATEWAY_TOKEN from your droplet config.
         </div>
       )}
 

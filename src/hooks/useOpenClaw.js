@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ANTHROPIC_MODEL } from '../constants/ai';
+import { SECRETS } from '../../lib/secrets.js';
 
-const OPENCLAW_URL = import.meta.env.VITE_OPENCLAW_URL || 'http://67.205.162.212:18789';
+const OPENCLAW_URL = SECRETS.OPENCLAW_URL;
 
 async function proxyHealth() {
   const res = await fetch('/api/openclaw', { signal: AbortSignal.timeout(8000) });
@@ -73,21 +74,15 @@ export async function sendAnthropicFallback(systemPrompt, messages) {
       if (data.reply) return { reply: data.reply, source: 'anthropic' };
     }
     if (res.status === 503) {
-      return {
-        reply: 'Add ANTHROPIC_API_KEY in Vercel/Netlify → Environment Variables, then Redeploy.',
-        source: 'anthropic',
-      };
+      return { reply: 'Missing ANTHROPIC_API_KEY in lib/secrets.js', source: 'anthropic' };
     }
   } catch {
-    /* local dev — try direct key below */
+    /* try direct key below */
   }
 
-  const key = import.meta.env.VITE_ANTHROPIC_KEY;
+  const key = SECRETS.ANTHROPIC_API_KEY;
   if (!key) {
-    return {
-      reply: 'AI unavailable — set ANTHROPIC_API_KEY on Vercel/Netlify (or VITE_ANTHROPIC_KEY in .env for local dev), then redeploy.',
-      source: 'anthropic',
-    };
+    return { reply: 'AI unavailable — set ANTHROPIC_API_KEY in lib/secrets.js', source: 'anthropic' };
   }
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -122,7 +117,7 @@ export async function resolveAIReply(sendMessage, systemPrompt, userText, agent,
 
   if (oc.error) {
     return {
-      reply: `OpenClaw could not reply.\n\n${oc.error}\n\nYour Vercel env vars only apply on Vercel. If you use Netlify (rococo-figolla-a3839f.netlify.app), add the same OPENCLAW_GATEWAY_TOKEN there too, then redeploy.\n\nToken must be copied from the droplet config file — not the redacted CLI output.`,
+      reply: `OpenClaw could not reply.\n\n${oc.error}\n\nIf token is wrong, update OPENCLAW_GATEWAY_TOKEN in lib/secrets.js (droplet: grep token ~/.openclaw/openclaw.json).`,
       source: 'openclaw',
       via: 'openclaw-error',
     };

@@ -1,4 +1,6 @@
-/** Vercel serverless — Anthropic proxy (key stays server-side, not in JS bundle) */
+/** Vercel serverless — Anthropic proxy */
+
+import { SECRETS } from '../lib/secrets.js';
 
 const ANTHROPIC_MODEL = 'claude-sonnet-4-6';
 
@@ -7,12 +9,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const key = process.env.ANTHROPIC_API_KEY || process.env.VITE_ANTHROPIC_KEY;
+  const key = SECRETS.ANTHROPIC_API_KEY;
   if (!key) {
-    return res.status(503).json({
-      error: 'Missing ANTHROPIC_API_KEY',
-      hint: 'Add ANTHROPIC_API_KEY in Vercel → Settings → Environment Variables, then redeploy.',
-    });
+    return res.status(503).json({ error: 'Missing ANTHROPIC_API_KEY in lib/secrets.js' });
   }
 
   const { systemPrompt, messages } = req.body || {};

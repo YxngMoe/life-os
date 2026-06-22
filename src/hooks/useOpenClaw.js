@@ -117,7 +117,7 @@ export async function resolveAIReply(sendMessage, systemPrompt, userText, agent,
 
   if (oc.error) {
     return {
-      reply: `OpenClaw could not reply.\n\n${oc.error}\n\nIf token is wrong, update OPENCLAW_GATEWAY_TOKEN in lib/secrets.js (droplet: grep token ~/.openclaw/openclaw.json).`,
+      reply: `OpenClaw error: ${oc.error}`,
       source: 'openclaw',
       via: 'openclaw-error',
     };

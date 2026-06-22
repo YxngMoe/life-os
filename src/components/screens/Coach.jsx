@@ -10,6 +10,8 @@ import { useToast } from '../../context/ToastContext';
 import { AGENTS, AGENT_PROMPTS, DEFAULT_SUBJECTS } from '../../data/defaults';
 import { getAgentChat, setAgentChat, getSubjectNotes, lsGet, lsSet } from '../../data/storage';
 import { useOpenClaw, resolveAIReply } from '../../hooks/useOpenClaw';
+import { useAIThinking } from '../../hooks/useAIThinking';
+import AIThinkingPanel from '../ui/AIThinkingPanel';
 import { calcGoalProgress, getGoalsStats } from '../../data/goals';
 import AgentHub from '../agents/AgentHub';
 import { screenEnter } from '../../utils/motion';
@@ -54,6 +56,8 @@ export default function CoachScreen({ onNavigate }) {
   const [feynmanActive, setFeynmanActive] = useState(false);
   const [interviewType, setInterviewType] = useState('');
   const { status, sendMessage, lastError } = useOpenClaw();
+  const thinking = useAIThinking();
+  const [thinkingProvider, setThinkingProvider] = useState('openclaw');
   const [aiDiag, setAiDiag] = useState(null);
   const recRef = useRef(null);
   const agentData = AGENTS.find((a) => a.id === agent);
@@ -76,6 +80,8 @@ export default function CoachScreen({ onNavigate }) {
     saveMessages(next);
     setInput('');
     setLoading(true);
+    thinking.start();
+    setThinkingProvider('openclaw');
 
     const { reply, via } = await resolveAIReply(
       sendMessage,
@@ -83,10 +89,16 @@ export default function CoachScreen({ onNavigate }) {
       userText,
       agent,
       next,
+      ({ message, status: stepStatus, via: stepVia }) => {
+        thinking.push(message, stepStatus);
+        if (stepVia === 'anthropic-fallback') setThinkingProvider('anthropic');
+      },
     );
 
-    saveMessages([...next, { role: 'assistant', content: reply, via, ts: Date.now() }]);
+    thinking.end();
     setLoading(false);
+
+    saveMessages([...next, { role: 'assistant', content: reply, via, ts: Date.now() }]);
 
     if (logAction) {
       lsSet('agent_log', [{ agent, action: logAction, ts: Date.now() }, ...(lsGet('agent_log') || []).slice(0, 9)]);
@@ -235,6 +247,14 @@ export default function CoachScreen({ onNavigate }) {
                 </GlassCard>
               )
             ))}
+            {loading && (
+              <AIThinkingPanel
+                active={thinking.active}
+                steps={thinking.steps}
+                provider={thinkingProvider}
+                agentEmoji={agentData?.emoji}
+              />
+            )}
           </div>
         </div>
       )}
@@ -288,7 +308,22 @@ export default function CoachScreen({ onNavigate }) {
                   )}
                 </GlassCard>
             ))}
-            {loading && <GlassCard className="chat-assistant"><motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1 }}>···</motion.span></GlassCard>}
+            {loading && (
+              <AIThinkingPanel
+                active={thinking.active}
+                steps={thinking.steps}
+                provider={thinkingProvider}
+                agentEmoji={agentData?.emoji}
+              />
+            )}
+            {!loading && thinking.steps.length > 0 && (
+              <AIThinkingPanel
+                active={false}
+                steps={thinking.steps.slice(-6)}
+                provider={thinkingProvider}
+                agentEmoji={agentData?.emoji}
+              />
+            )}
           </div>
           <div className="flex gap-8" style={{ paddingTop: 12, marginTop: 'auto' }}>
             <input className="glass-input flex-1" placeholder="Message…" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && send(input, 'Chat message')} />

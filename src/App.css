@@ -166,6 +166,28 @@ body{font-family:-apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue",s
 .sheet-handle{width:36px;height:4px;background:rgba(255,255,255,0.25);border-radius:2px;margin:12px auto 20px}
 .chat-user{align-self:flex-end;max-width:85%;padding:13px 17px;background:linear-gradient(135deg,var(--neon),var(--neon2));color:#010108;border-radius:20px 20px 4px 20px;font-size:14px;line-height:1.55;font-weight:500}
 .chat-assistant{align-self:flex-start;max-width:88%;padding:13px 17px;font-size:14px;line-height:1.55}
+.ai-thinking{align-self:flex-start;max-width:100%;width:100%;border-radius:14px;border:1px solid rgba(99,102,241,0.25);background:rgba(8,8,20,0.85);overflow:hidden;box-shadow:0 0 24px rgba(99,102,241,0.12)}
+.ai-thinking__head{display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;background:transparent;border:none;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;text-align:left}
+.ai-thinking__pulse{width:8px;height:8px;border-radius:50%;background:var(--neon);flex-shrink:0}
+.ai-thinking__pulse[data-active="true"]{animation:thinkPulse 1.2s ease-in-out infinite}
+@keyframes thinkPulse{0%,100%{opacity:0.4;transform:scale(0.9)}50%{opacity:1;transform:scale(1.15);box-shadow:0 0 12px var(--neon)}}
+.ai-thinking__icon{color:var(--neon);flex-shrink:0}
+.ai-thinking__label{flex:1;color:var(--text1);font-size:13px}
+.ai-thinking__provider{font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(99,102,241,0.15);color:#a5b4fc;text-transform:uppercase;letter-spacing:0.04em}
+.ai-thinking__time{font-size:10px;color:var(--text3);font-variant-numeric:tabular-nums}
+.ai-thinking__spin{animation:spin 0.9s linear infinite;color:var(--neon)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ai-thinking__log{list-style:none;margin:0;padding:8px 12px 12px;border-top:1px solid rgba(255,255,255,0.06);max-height:160px;overflow-y:auto}
+.ai-thinking__step{display:flex;align-items:flex-start;gap:8px;padding:5px 0;font-size:11px;color:var(--text3);line-height:1.4}
+.ai-thinking__step--active{color:var(--text2)}
+.ai-thinking__step--error{color:#f87171}
+.ai-thinking__step--done{color:var(--text3)}
+.ai-thinking__step-icon{width:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.ai-thinking__step--done .ai-thinking__step-icon{color:#34d399}
+.ai-thinking__step--error .ai-thinking__step-icon{color:#f87171}
+.ai-thinking__step-msg{flex:1}
+.ai-thinking__step-time{font-size:10px;color:var(--text3);opacity:0.7;font-variant-numeric:tabular-nums}
+.ai-thinking__dot{width:6px;height:6px;border-radius:50%;background:var(--neon);animation:thinkPulse 1s ease-in-out infinite}
 .chat-messages{display:flex;flex-direction:column;gap:12px;flex:1;overflow-y:auto;padding:16px 0}
 .voice-sphere{width:104px;height:104px;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--glass2);border:1px solid var(--border2);box-shadow:var(--glow-indigo);transition:box-shadow 0.3s}
 .voice-sphere.listening{animation:pulseSphere 1.5s ease-in-out infinite}

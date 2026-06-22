@@ -10,7 +10,8 @@ import { AGENTS, AGENT_PROMPTS } from '../../data/defaults';
 import { AGENT_CAPABILITIES, AGENT_QUICK_ACTIONS } from '../../data/agentConfig';
 import { getAgentChat, setAgentChat, lsGet, lsSet } from '../../data/storage';
 import { useNeuralOptional } from '../../context/NeuralContext';
-import DynamicMissions from './DynamicMissions';
+import AIThinkingPanel from '../ui/AIThinkingPanel';
+import { useAIThinking } from '../../hooks/useAIThinking';
 import { screenEnter } from '../../utils/motion';
 
 function AgentCard({ agent, recommended, onSelect, onQuickAction, loading }) {
@@ -73,6 +74,7 @@ export default function AgentHub({ onNavigate, embedded = false }) {
   const { status, sendMessage } = useOpenClaw();
   const [agentLog, setAgentLog] = useStorage('agent_log', []);
   const [loading, setLoading] = useState(null);
+  const thinking = useAIThinking();
   const [orchestratorMsg, setOrchestratorMsg] = useState('');
   const [tickerIdx, setTickerIdx] = useState(0);
 
@@ -84,12 +86,14 @@ export default function AgentHub({ onNavigate, embedded = false }) {
   }, [tickers.length]);
 
   async function runAgent(agentId, prompt, label) {
-    setLoading(agentId);
     const agent = AGENTS.find((a) => a.id === agentId);
     const hist = getAgentChat(agentId);
     const userMsg = { role: 'user', content: prompt, ts: Date.now() };
     const next = [...hist, userMsg];
     setAgentChat(agentId, next);
+
+    setLoading(agentId);
+    thinking.start();
 
     const { reply } = await resolveAIReply(
       sendMessage,
@@ -97,7 +101,10 @@ export default function AgentHub({ onNavigate, embedded = false }) {
       prompt,
       agentId,
       next,
+      ({ message, status: stepStatus }) => thinking.push(message, stepStatus),
     );
+
+    thinking.end();
     setAgentChat(agentId, [...next, { role: 'assistant', content: reply, ts: Date.now() }]);
 
     const entry = { agent: agentId, action: label || prompt.slice(0, 40), ts: Date.now(), preview: reply.slice(0, 80) };
@@ -164,6 +171,17 @@ export default function AgentHub({ onNavigate, embedded = false }) {
       </GlassCard>
 
       <DynamicMissions onNavigate={onNavigate} onDelegate={handleDelegate} />
+
+      {loading && (
+        <div className="mb-16">
+          <AIThinkingPanel
+            active={thinking.active}
+            steps={thinking.steps}
+            provider="openclaw"
+            agentEmoji={AGENTS.find((a) => a.id === loading)?.emoji}
+          />
+        </div>
+      )}
 
       <div className="text-micro mb-12">🤖 AGENT ROSTER</div>
       {AGENTS.map((agent) => (

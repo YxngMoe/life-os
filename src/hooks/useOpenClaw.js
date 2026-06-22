@@ -111,11 +111,24 @@ export async function sendAnthropicFallback(systemPrompt, messages) {
 }
 
 /** Try OpenClaw first; never silently fall back when OpenClaw returned an error. */
-export async function resolveAIReply(sendMessage, systemPrompt, userText, agent, history) {
+export async function resolveAIReply(sendMessage, systemPrompt, userText, agent, history, onProgress) {
+  const log = (message, status = 'active') => onProgress?.({ message, status });
+
+  log('Message queued', 'done');
+  log(`Agent persona: ${agent}`, 'done');
+  log('Connecting to OpenClaw gateway…', 'active');
+
   const oc = await sendMessage(userText, agent, systemPrompt);
-  if (oc.reply) return { ...oc, via: 'openclaw' };
+
+  if (oc.reply) {
+    log('OpenClaw returned a reply', 'done');
+    onProgress?.({ message: 'Done', status: 'done', via: 'openclaw' });
+    return { ...oc, via: 'openclaw' };
+  }
 
   if (oc.error) {
+    log(`OpenClaw error: ${typeof oc.error === 'string' ? oc.error.slice(0, 80) : 'failed'}`, 'error');
+    onProgress?.({ message: 'Stopped — OpenClaw error', status: 'error', via: 'openclaw-error' });
     return {
       reply: `OpenClaw error: ${oc.error}`,
       source: 'openclaw',
@@ -123,7 +136,13 @@ export async function resolveAIReply(sendMessage, systemPrompt, userText, agent,
     };
   }
 
+  log('OpenClaw empty — falling back to Claude', 'done');
+  log('Claude Sonnet thinking…', 'active');
+
   const fb = await sendAnthropicFallback(systemPrompt, history.map((m) => ({ role: m.role, content: m.content })));
+  log('Claude returned a reply', 'done');
+  onProgress?.({ message: 'Done (Claude fallback)', status: 'done', via: 'anthropic-fallback' });
+
   return {
     ...fb,
     via: 'anthropic-fallback',

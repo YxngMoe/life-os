@@ -123,6 +123,8 @@ const server = http.createServer(async (req, res) => {
   try {
     await ensureDirs();
     const parts = url.pathname.split('/').filter(Boolean);
+
+    if (req.method === 'GET' && url.pathname === '/manifest') {
       return send(res, 200, await readManifest());
     }
 

@@ -1,22 +1,23 @@
 #!/bin/bash
-# Run on your DigitalOcean droplet (as root) to enable Life OS ↔ Obsidian JSON sync.
+# Life OS JSON sync — same vault folder OpenClaw uses on Hetzner.
 set -euo pipefail
 
 REPO_DIR="${1:-/root/life-os}"
-VAULT_DIR="${2:-/root/obsidian-vault}"
+VAULT_DIR="${2:-$HOME/.openclaw/workspace/obsidian/Moe's Life-OS}"
 PORT=18790
-TOKEN="${3:-$(grep -o '"token"[[:space:]]*:[[:space:]]*"[^"]*"' /root/.openclaw/openclaw.json 2>/dev/null | sed 's/.*"\([^"]*\)"$/\1/' || true)}"
+TOKEN="${3:-$(grep -o '"token"[[:space:]]*:[[:space:]]*"[^"]*"' "$HOME/.openclaw/openclaw.json" 2>/dev/null | sed 's/.*"\([^"]*\)"$/\1/' || true)}"
 
-echo "Life OS data sync setup"
+echo "Life OS data sync → OpenClaw vault"
 echo "  Repo:  $REPO_DIR"
 echo "  Vault: $VAULT_DIR"
+echo "  JSON:  $VAULT_DIR/Life OS/data/"
 echo "  Port:  $PORT"
 
 mkdir -p "$VAULT_DIR/Life OS/data"
 
 cat > /etc/systemd/system/life-os-data.service <<EOF
 [Unit]
-Description=Life OS JSON data sync (Obsidian folder)
+Description=Life OS JSON data sync (OpenClaw vault)
 After=network.target
 
 [Service]
@@ -36,7 +37,6 @@ EOF
 systemctl daemon-reload
 systemctl enable life-os-data
 systemctl restart life-os-data
-ufw allow "$PORT/tcp" 2>/dev/null || true
 
-echo "Done. Data folder: $VAULT_DIR/Life OS/data/"
+echo "Done. NOT iCloud — use scripts/setup-vault-git.sh for device sync."
 systemctl status life-os-data --no-pager | head -8

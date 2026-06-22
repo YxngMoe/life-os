@@ -11,7 +11,8 @@ import path from 'path';
 
 const PORT = Number(process.env.LIFE_OS_DATA_PORT || 18790);
 const TOKEN = process.env.LIFE_OS_DATA_TOKEN || process.env.OPENCLAW_GATEWAY_TOKEN || '';
-const VAULT_ROOT = process.env.LIFE_OS_VAULT_DIR || '/root/obsidian-vault';
+const VAULT_ROOT = process.env.LIFE_OS_VAULT_DIR
+  || path.join(process.env.HOME || '/root', '.openclaw', 'workspace', 'obsidian', "Moe's Life-OS");
 const DATA_DIR = path.join(VAULT_ROOT, 'Life OS', 'data');
 const MANIFEST = path.join(VAULT_ROOT, 'Life OS', 'manifest.json');
 const INDEX_MD = path.join(VAULT_ROOT, 'Life OS', 'index.md');
@@ -43,11 +44,14 @@ async function writeManifest(keys) {
   const manifest = { updatedAt: new Date().toISOString(), keys };
   await fs.writeFile(MANIFEST, JSON.stringify(manifest, null, 2));
   const lines = [
-    '# Life OS Data',
+    '# Life OS Data (server copy)',
     '',
     `Last sync: ${manifest.updatedAt}`,
     '',
-    'JSON files in `data/` — edited by Life OS app. Readable in Obsidian.',
+    '**Important:** This folder lives on your Hetzner server — not iCloud.',
+    'Use **Obsidian Git** (or pull this repo) to see files on your phone/Mac.',
+    '',
+    'JSON below powers the Life OS web app. Markdown notes live in sibling folders (ABW, Journal, etc.).',
     '',
     '## Files',
     ...Object.keys(keys).sort().map((k) => `- [[data/${k}.json]]`),

@@ -42,7 +42,7 @@ export default function Sidebar({ screen, onNavigate, lightMode, onToggleTheme, 
         <div className="text-caption mb-12">🔥 {streak.cur || 0} day streak</div>
         <div className="flex gap-8">
           <button type="button" className="glass-pill" onClick={onToggleTheme}>{lightMode ? <Sun size={14} /> : <Moon size={14} />}</button>
-          <button type="button" className="glass-pill" onClick={onSync} title="Obsidian sync">
+          <button type="button" className="glass-pill" onClick={onSync} title="Server vault sync — use Obsidian Git on Mac/iPhone to pull">
             <Cloud size={14} className={syncState === 'syncing' ? 'spin' : ''} />
             {syncState === 'synced' && ' ✓'}
           </button>

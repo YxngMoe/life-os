@@ -101,7 +101,7 @@ function AppInner() {
   async function handleSync() {
     try {
       await syncToObsidian(setSyncState);
-      toast('Obsidian sync complete', 'emerald');
+      toast('Saved to server vault (pull via Obsidian Git to see on devices)', 'emerald');
       setTimeout(() => setSyncState('idle'), 2000);
     } catch {
       setSyncState('error');

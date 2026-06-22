@@ -54,8 +54,13 @@ export default function CoachScreen({ onNavigate }) {
   const [feynmanActive, setFeynmanActive] = useState(false);
   const [interviewType, setInterviewType] = useState('');
   const { status, sendMessage, lastError } = useOpenClaw();
+  const [aiDiag, setAiDiag] = useState(null);
   const recRef = useRef(null);
   const agentData = AGENTS.find((a) => a.id === agent);
+
+  useEffect(() => {
+    fetch('/api/ai-status').then((r) => r.json()).then(setAiDiag).catch(() => {});
+  }, []);
 
   useEffect(() => { setMessagesState(getAgentChat(agent)); }, [agent]);
 
@@ -157,6 +162,12 @@ export default function CoachScreen({ onNavigate }) {
       {lastError && (
         <div className="offline-banner mb-12" style={{ position: 'relative', top: 0 }}>
           OpenClaw chat blocked: {lastError}
+        </div>
+      )}
+
+      {aiDiag && !aiDiag.hasOpenClawToken && (
+        <div className="offline-banner mb-12" style={{ position: 'relative', top: 0, borderColor: 'rgba(251,191,36,0.4)', color: '#fbbf24' }}>
+          {aiDiag.host === 'netlify' ? 'Netlify' : 'This host'} has no OPENCLAW_GATEWAY_TOKEN — Vercel env vars are separate. Add the token on {aiDiag.host || 'your host'}, redeploy.
         </div>
       )}
 

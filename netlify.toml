@@ -16,6 +16,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/ai-status"
+  to = "/.netlify/functions/ai-status"
+  status = 200
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200

@@ -115,15 +115,14 @@ export async function sendAnthropicFallback(systemPrompt, messages) {
   return { reply: data.content?.[0]?.text || 'No response.', source: 'anthropic' };
 }
 
-/** Try OpenClaw first; fall back to Claude only when OpenClaw is unreachable (not auth/config). */
+/** Try OpenClaw first; never silently fall back when OpenClaw returned an error. */
 export async function resolveAIReply(sendMessage, systemPrompt, userText, agent, history) {
   const oc = await sendMessage(userText, agent, systemPrompt);
   if (oc.reply) return { ...oc, via: 'openclaw' };
 
-  const isConfig = oc.error && /token|503|401|missing/i.test(oc.error);
-  if (isConfig) {
+  if (oc.error) {
     return {
-      reply: `OpenClaw is not connected yet.\n\n${oc.error}\n\nFix: add OPENCLAW_GATEWAY_TOKEN in your host env vars (copy from droplet ~/.openclaw/openclaw.json), redeploy, then ask again.`,
+      reply: `OpenClaw could not reply.\n\n${oc.error}\n\nYour Vercel env vars only apply on Vercel. If you use Netlify (rococo-figolla-a3839f.netlify.app), add the same OPENCLAW_GATEWAY_TOKEN there too, then redeploy.\n\nToken must be copied from the droplet config file — not the redacted CLI output.`,
       source: 'openclaw',
       via: 'openclaw-error',
     };
@@ -133,6 +132,6 @@ export async function resolveAIReply(sendMessage, systemPrompt, userText, agent,
   return {
     ...fb,
     via: 'anthropic-fallback',
-    fallbackNote: oc.error,
+    fallbackNote: 'OpenClaw returned no reply',
   };
 }

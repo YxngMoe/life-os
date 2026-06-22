@@ -5,9 +5,13 @@ const OPENCLAW_URL = import.meta.env.VITE_OPENCLAW_URL || 'http://67.205.162.212
 
 async function proxyHealth() {
   const res = await fetch('/api/openclaw', { signal: AbortSignal.timeout(8000) });
-  return res.ok;
+  const ct = res.headers.get('content-type') || '';
+  if (!ct.includes('application/json')) return false;
+  const data = await res.json().catch(() => ({}));
+  return res.ok && data.ok === true;
 }
 
+/** @returns {{ reply: string|null, source: 'openclaw'|'anthropic', error?: string }} */
 async function proxyChat(message, agent, context) {
   const res = await fetch('/api/openclaw', {
     method: 'POST',
@@ -15,18 +19,26 @@ async function proxyChat(message, agent, context) {
     body: JSON.stringify({ message, agent, context }),
     signal: AbortSignal.timeout(120000),
   });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.reply || null;
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    return {
+      reply: null,
+      source: 'openclaw',
+      error: data.hint || data.error || `OpenClaw HTTP ${res.status}`,
+    };
+  }
+  return { reply: data.reply || null, source: data.source || 'openclaw' };
 }
 
 export function useOpenClaw() {
   const [status, setStatus] = useState('checking');
+  const [lastError, setLastError] = useState(null);
 
   const checkHealth = useCallback(async () => {
     try {
       const ok = await proxyHealth();
       setStatus(ok ? 'connected' : 'idle');
+      if (ok) setLastError(null);
     } catch {
       setStatus('offline');
     }
@@ -38,10 +50,14 @@ export function useOpenClaw() {
     return () => clearInterval(id);
   }, [checkHealth]);
 
-  const sendMessage = async (message, agent, context = '') =>
-    proxyChat(message, agent, context);
+  const sendMessage = async (message, agent, context = '') => {
+    const result = await proxyChat(message, agent, context);
+    if (result.error) setLastError(result.error);
+    else setLastError(null);
+    return result;
+  };
 
-  return { status, checkHealth, sendMessage, url: OPENCLAW_URL };
+  return { status, lastError, checkHealth, sendMessage, url: OPENCLAW_URL };
 }
 
 export async function sendAnthropicFallback(systemPrompt, messages) {
@@ -54,10 +70,13 @@ export async function sendAnthropicFallback(systemPrompt, messages) {
     });
     if (res.ok) {
       const data = await res.json();
-      if (data.reply) return data.reply;
+      if (data.reply) return { reply: data.reply, source: 'anthropic' };
     }
     if (res.status === 503) {
-      return 'Add ANTHROPIC_API_KEY in Vercel → Settings → Environment Variables, then Redeploy.';
+      return {
+        reply: 'Add ANTHROPIC_API_KEY in Vercel/Netlify → Environment Variables, then Redeploy.',
+        source: 'anthropic',
+      };
     }
   } catch {
     /* local dev — try direct key below */
@@ -65,7 +84,10 @@ export async function sendAnthropicFallback(systemPrompt, messages) {
 
   const key = import.meta.env.VITE_ANTHROPIC_KEY;
   if (!key) {
-    return 'AI unavailable — set ANTHROPIC_API_KEY on Vercel (or VITE_ANTHROPIC_KEY in .env for local dev), then redeploy.';
+    return {
+      reply: 'AI unavailable — set ANTHROPIC_API_KEY on Vercel/Netlify (or VITE_ANTHROPIC_KEY in .env for local dev), then redeploy.',
+      source: 'anthropic',
+    };
   }
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -86,9 +108,31 @@ export async function sendAnthropicFallback(systemPrompt, messages) {
 
   if (!res.ok) {
     const err = await res.text();
-    return `API error: ${err.slice(0, 120)}`;
+    return { reply: `API error: ${err.slice(0, 120)}`, source: 'anthropic' };
   }
 
   const data = await res.json();
-  return data.content?.[0]?.text || 'No response.';
+  return { reply: data.content?.[0]?.text || 'No response.', source: 'anthropic' };
+}
+
+/** Try OpenClaw first; fall back to Claude only when OpenClaw is unreachable (not auth/config). */
+export async function resolveAIReply(sendMessage, systemPrompt, userText, agent, history) {
+  const oc = await sendMessage(userText, agent, systemPrompt);
+  if (oc.reply) return { ...oc, via: 'openclaw' };
+
+  const isConfig = oc.error && /token|503|401|missing/i.test(oc.error);
+  if (isConfig) {
+    return {
+      reply: `OpenClaw is not connected yet.\n\n${oc.error}\n\nFix: add OPENCLAW_GATEWAY_TOKEN in your host env vars (copy from droplet ~/.openclaw/openclaw.json), redeploy, then ask again.`,
+      source: 'openclaw',
+      via: 'openclaw-error',
+    };
+  }
+
+  const fb = await sendAnthropicFallback(systemPrompt, history.map((m) => ({ role: m.role, content: m.content })));
+  return {
+    ...fb,
+    via: 'anthropic-fallback',
+    fallbackNote: oc.error,
+  };
 }

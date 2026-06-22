@@ -9,7 +9,7 @@ import { useStorage } from '../../hooks/useStorage';
 import { useToast } from '../../context/ToastContext';
 import { AGENTS, AGENT_PROMPTS, DEFAULT_SUBJECTS } from '../../data/defaults';
 import { getAgentChat, setAgentChat, getSubjectNotes, lsGet, lsSet } from '../../data/storage';
-import { useOpenClaw, sendAnthropicFallback } from '../../hooks/useOpenClaw';
+import { useOpenClaw, resolveAIReply } from '../../hooks/useOpenClaw';
 import { calcGoalProgress, getGoalsStats } from '../../data/goals';
 import AgentHub from '../agents/AgentHub';
 import { screenEnter } from '../../utils/motion';
@@ -53,7 +53,7 @@ export default function CoachScreen({ onNavigate }) {
   const [feynmanSubject, setFeynmanSubject] = useState('tech');
   const [feynmanActive, setFeynmanActive] = useState(false);
   const [interviewType, setInterviewType] = useState('');
-  const { status, sendMessage } = useOpenClaw();
+  const { status, sendMessage, lastError } = useOpenClaw();
   const recRef = useRef(null);
   const agentData = AGENTS.find((a) => a.id === agent);
 
@@ -72,10 +72,15 @@ export default function CoachScreen({ onNavigate }) {
     setInput('');
     setLoading(true);
 
-    let reply = await sendMessage(userText, agent, AGENT_PROMPTS[agent]);
-    if (!reply) reply = await sendAnthropicFallback(AGENT_PROMPTS[agent], next.map((m) => ({ role: m.role, content: m.content })));
+    const { reply, via } = await resolveAIReply(
+      sendMessage,
+      AGENT_PROMPTS[agent],
+      userText,
+      agent,
+      next,
+    );
 
-    saveMessages([...next, { role: 'assistant', content: reply, ts: Date.now() }]);
+    saveMessages([...next, { role: 'assistant', content: reply, via, ts: Date.now() }]);
     setLoading(false);
 
     if (logAction) {
@@ -139,7 +144,7 @@ export default function CoachScreen({ onNavigate }) {
         title="AI Neural Coach"
         subtitle="Voice · Chat · Agents · Feynman · Interview prep"
         accent="#f472b6"
-        badge={status === 'connected' ? 'OPENCLAW LIVE' : 'FALLBACK MODE'}
+        badge={status === 'connected' ? 'OPENCLAW GATEWAY' : 'GATEWAY OFFLINE'}
         stats={[
           { label: 'Goals active', value: goalStats.active },
           { label: 'Critical', value: goalStats.critical, color: '#f87171' },
@@ -148,6 +153,12 @@ export default function CoachScreen({ onNavigate }) {
       />
 
       <AgentPills active={agent} onSelect={setAgent} />
+
+      {lastError && (
+        <div className="offline-banner mb-12" style={{ position: 'relative', top: 0 }}>
+          OpenClaw chat blocked: {lastError}
+        </div>
+      )}
 
       <div className="coach-goals-bar mb-16">
         <GlassCard accentColor="#6366f1" style={{ padding: '12px 16px', flex: 1 }}>
@@ -202,7 +213,16 @@ export default function CoachScreen({ onNavigate }) {
           <p className="text-caption text-secondary">{listening ? 'Listening…' : speaking ? 'Speaking…' : 'Tap to speak'}</p>
           <div className="chat-messages" style={{ maxHeight: 240, marginTop: 20 }}>
             {messages.slice(-4).map((m, i) => (
-              m.role === 'user' ? <div key={i} className="chat-user">{m.content}</div> : <GlassCard key={i} className="chat-assistant">{agentData?.emoji} {m.content}</GlassCard>
+              m.role === 'user' ? <div key={i} className="chat-user">{m.content}</div> : (
+                <GlassCard key={i} className="chat-assistant">
+                  {agentData?.emoji} {m.content}
+                  {m.via && (
+                    <div className="text-micro text-tertiary mt-8" style={{ opacity: 0.7 }}>
+                      {m.via === 'openclaw' ? 'via OpenClaw' : m.via === 'openclaw-error' ? 'OpenClaw config needed' : 'via Claude (fallback)'}
+                    </div>
+                  )}
+                </GlassCard>
+              )
             ))}
           </div>
         </div>
@@ -248,7 +268,14 @@ export default function CoachScreen({ onNavigate }) {
             )}
             {messages.map((m, i) => (
               m.role === 'user' ? <div key={i} className="chat-user">{m.content}</div> :
-                <GlassCard key={i} className="chat-assistant">{agentData?.emoji} {m.content}</GlassCard>
+                <GlassCard key={i} className="chat-assistant">
+                  {agentData?.emoji} {m.content}
+                  {m.via && (
+                    <div className="text-micro text-tertiary mt-8" style={{ opacity: 0.7 }}>
+                      {m.via === 'openclaw' ? 'via OpenClaw' : m.via === 'openclaw-error' ? 'OpenClaw config needed' : 'via Claude (fallback)'}
+                    </div>
+                  )}
+                </GlassCard>
             ))}
             {loading && <GlassCard className="chat-assistant"><motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1 }}>···</motion.span></GlassCard>}
           </div>

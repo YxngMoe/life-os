@@ -4,12 +4,11 @@ import { Bot, Zap, Radio, Send, Activity } from 'lucide-react';
 import GlassCard from '../ui/GlassCard';
 import ScreenHero from '../ui/ScreenHero';
 import { useStorage } from '../../hooks/useStorage';
-import { useOpenClaw } from '../../hooks/useOpenClaw';
+import { useOpenClaw, resolveAIReply } from '../../hooks/useOpenClaw';
 import { useToast } from '../../context/ToastContext';
 import { AGENTS, AGENT_PROMPTS } from '../../data/defaults';
 import { AGENT_CAPABILITIES, AGENT_QUICK_ACTIONS } from '../../data/agentConfig';
 import { getAgentChat, setAgentChat, lsGet, lsSet } from '../../data/storage';
-import { sendAnthropicFallback } from '../../hooks/useOpenClaw';
 import { useNeuralOptional } from '../../context/NeuralContext';
 import DynamicMissions from './DynamicMissions';
 import { screenEnter } from '../../utils/motion';
@@ -92,10 +91,13 @@ export default function AgentHub({ onNavigate, embedded = false }) {
     const next = [...hist, userMsg];
     setAgentChat(agentId, next);
 
-    let reply = await sendMessage(prompt, agentId, AGENT_PROMPTS[agentId]);
-    if (!reply) {
-      reply = await sendAnthropicFallback(AGENT_PROMPTS[agentId], next.map((m) => ({ role: m.role, content: m.content })));
-    }
+    const { reply } = await resolveAIReply(
+      sendMessage,
+      AGENT_PROMPTS[agentId],
+      prompt,
+      agentId,
+      next,
+    );
     setAgentChat(agentId, [...next, { role: 'assistant', content: reply, ts: Date.now() }]);
 
     const entry = { agent: agentId, action: label || prompt.slice(0, 40), ts: Date.now(), preview: reply.slice(0, 80) };
@@ -129,7 +131,7 @@ export default function AgentHub({ onNavigate, embedded = false }) {
           title="AI Agent Command"
           subtitle="5 specialized agents · auto-routing · live orchestration"
           accent="#c084fc"
-          badge={status === 'connected' ? 'OPENCLAW LIVE' : 'FALLBACK MODE'}
+          badge={status === 'connected' ? 'OPENCLAW GATEWAY' : 'GATEWAY OFFLINE'}
           stats={[
             { label: 'Agents', value: AGENTS.length },
             { label: 'Active', value: AGENTS.length, color: '#c084fc' },

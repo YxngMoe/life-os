@@ -24,7 +24,7 @@ export default function AIStrip({ openClawStatus, offline }) {
         <Sparkles size={12} className="ai-strip__icon" />
         <span className="ai-strip__label">NEURAL OS</span>
         <span className="ai-strip__dot" />
-        <span className="ai-strip__status">{online ? 'AI ONLINE' : 'FALLBACK MODE'}</span>
+        <span className="ai-strip__status">{online ? 'GATEWAY LIVE' : 'GATEWAY OFFLINE'}</span>
         {dynamic && <span className="ai-strip__dynamic">{dynamic}</span>}
         {offline ? <WifiOff size={11} /> : <Wifi size={11} />}
         <span className="ai-strip__version">{buildLabel()}</span>

@@ -1,67 +1,68 @@
 #!/bin/bash
-# Wire the Hetzner/OpenClaw vault to a private git remote so Obsidian Git can pull on your devices.
-# Usage: bash scripts/setup-vault-git.sh "/root/.openclaw/workspace/obsidian/Moe's Life-OS" git@github.com:YOU/moe-vault.git
+# Wire OpenClaw vault to a private git remote → Obsidian Git on your devices.
+# Usage:
+#   bash setup-vault-git.sh "/path/to/vault" git@github.com:YOU/repo.git
 set -euo pipefail
 
-VAULT_DIR="${1:-$HOME/.openclaw/workspace/obsidian/Moe's Life-OS}"
+VAULT_DIR="${1:-}"
 REMOTE="${2:-}"
+
+if [[ -z "$VAULT_DIR" ]]; then
+  VAULT_DIR="${HOME}/.openclaw/workspace/obsidian/Moe's Life-OS"
+fi
 
 if [[ -z "$REMOTE" ]]; then
   echo "Usage: $0 [vault-path] <git-remote-url>"
-  echo "Example: $0 \"\$HOME/.openclaw/workspace/obsidian/Moe's Life-OS\" git@github.com:YxngMoe/moe-life-vault.git"
+  echo 'Example:'
+  echo '  bash setup-vault-git.sh "$HOME/.openclaw/workspace/obsidian/Moe'"'"'s Life-OS" git@github.com:YxngMoe/moe-life-vault.git'
   exit 1
 fi
 
-cd "$VAULT_DIR"
+cd "${VAULT_DIR}"
 
 if [[ ! -d .git ]]; then
   git init
   git branch -M main
 fi
 
-git config user.email "life-os@hetzner.local" 2>/dev/null || true
+git config user.email "life-os@server.local" 2>/dev/null || true
 git config user.name "Life OS Server" 2>/dev/null || true
 
 if git remote get-url origin &>/dev/null; then
-  git remote set-url origin "$REMOTE"
+  git remote set-url origin "${REMOTE}"
 else
-  git remote add origin "$REMOTE"
+  git remote add origin "${REMOTE}"
 fi
 
-cat > .gitignore <<'EOF'
+cat > .gitignore <<'IGNORE'
 .DS_Store
 .obsidian/workspace.json
 .obsidian/workspace-mobile.json
 .trash/
-EOF
+IGNORE
 
 git add -A
-git commit -m "Vault bootstrap from Hetzner" || true
-git push -u origin main || echo "Push failed — add deploy key or PAT on server, then: git push -u origin main"
+git commit -m "Vault bootstrap from server" || true
+git push -u origin main || echo "Push failed — add GitHub deploy key on server, then: git push -u origin main"
 
-cat > SYNC_README.md <<'EOF'
-# Vault sync (Hetzner ↔ your devices)
+cat > SYNC_README.md <<'README'
+# Vault sync (server ↔ your devices)
 
 This vault on the server is **not** connected to iCloud automatically.
 
-## On your Mac/iPhone (Obsidian Git plugin)
-1. Clone the same private repo into iCloud Obsidian folder, OR
-2. Point your existing vault at this remote and enable auto pull every N minutes.
+## Mac / iPhone (Obsidian Git)
+1. Create a private GitHub repo and clone it into your iCloud Obsidian folder, OR
+2. Enable Obsidian Git auto-pull on your existing vault pointing at the same remote.
 
-## On the server (after OpenClaw or Life OS writes files)
-```bash
-cd "$HOME/.openclaw/workspace/obsidian/Moe's Life-OS"
-git add -A && git commit -m "sync" && git push
-```
+## Server — after OpenClaw or Life OS writes files
+    git add -A && git commit -m "sync" && git push
 
-## Cron (optional — auto-push every 5 min)
-```
-*/5 * * * * cd /root/.openclaw/workspace/obsidian/Moe\'s Life-OS && git add -A && git commit -m "auto sync" -q && git push -q
-```
-EOF
+## Optional cron (auto-push every 5 min)
+    */5 * * * * cd VAULT_PATH && git add -A && git commit -m "auto sync" -q && git push -q
+README
 
-git add SYNC_README.md .gitignore
+git add SYNC_README.md .gitignore 2>/dev/null || true
 git commit -m "Add vault sync readme" 2>/dev/null || true
 
-echo "Vault git remote: $REMOTE"
-echo "Next: install Obsidian Git on Mac, clone/pull this repo into your iCloud vault path."
+echo "Vault git remote: ${REMOTE}"
+echo "Next: Obsidian Git on Mac — clone or pull this repo into your iCloud vault."

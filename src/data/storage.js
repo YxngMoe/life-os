@@ -1,4 +1,5 @@
 const PREFIX = 'los_';
+const META_PREFIX = 'los_meta_';
 
 export function lsGet(key, fallback = null) {
   try {
@@ -10,7 +11,8 @@ export function lsGet(key, fallback = null) {
   }
 }
 
-export function lsSet(key, value) {
+/** Write local only — no remote push (used during hydrate). */
+export function lsSetLocal(key, value) {
   try {
     localStorage.setItem(PREFIX + key, JSON.stringify(value));
   } catch (e) {
@@ -18,10 +20,54 @@ export function lsSet(key, value) {
   }
 }
 
+export function lsGetMeta(key) {
+  try {
+    return localStorage.getItem(META_PREFIX + key) || null;
+  } catch {
+    return null;
+  }
+}
+
+export function lsSetMeta(key, iso) {
+  try {
+    localStorage.setItem(META_PREFIX + key, iso);
+  } catch { /* ignore */ }
+}
+
+let remotePush = null;
+
+export function bindRemotePush(fn) {
+  remotePush = fn;
+}
+
+export function lsSet(key, value) {
+  try {
+    localStorage.setItem(PREFIX + key, JSON.stringify(value));
+    const now = new Date().toISOString();
+    lsSetMeta(key, now);
+    remotePush?.(key);
+  } catch (e) {
+    console.warn('localStorage write failed', key, e);
+  }
+}
+
 export function initStorage(defaults) {
   Object.entries(defaults).forEach(([key, value]) => {
-    if (lsGet(key) === null) lsSet(key, value);
+    if (lsGet(key) === null) lsSetLocal(key, value);
   });
+}
+
+export function exportAllLosData() {
+  const data = {};
+  for (let i = 0; i < localStorage.length; i += 1) {
+    const k = localStorage.key(i);
+    if (k?.startsWith(PREFIX) && !k.startsWith(META_PREFIX)) {
+      try {
+        data[k.slice(PREFIX.length)] = JSON.parse(localStorage.getItem(k));
+      } catch { /* skip */ }
+    }
+  }
+  return data;
 }
 
 export function getSubjectNotes(id) {

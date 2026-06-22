@@ -41,23 +41,4 @@ export function useEditMode() {
   return { editMode, showPin, setShowPin, toggleEdit, unlockWithPin, touch };
 }
 
-function useStorage(key, initial) {
-  const [value, setValue] = useState(() => {
-    try {
-      const raw = localStorage.getItem('los_' + key);
-      return raw ? JSON.parse(raw) : initial;
-    } catch {
-      return initial;
-    }
-  });
-
-  const set = useCallback((next) => {
-    setValue((prev) => {
-      const resolved = typeof next === 'function' ? next(prev) : next;
-      localStorage.setItem('los_' + key, JSON.stringify(resolved));
-      return resolved;
-    });
-  }, [key]);
-
-  return [value, set];
-}
+import { useStorage } from './useStorage';

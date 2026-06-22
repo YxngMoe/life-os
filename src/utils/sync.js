@@ -1,29 +1,18 @@
 import { lsGet, lsSet } from '../data/storage';
+import { fullSync, pushAllToRemote } from '../data/remoteSync';
 
 export async function syncToObsidian(onProgress) {
   onProgress?.('syncing');
-  const lastSync = lsGet('last_sync', null);
-  const now = new Date().toISOString();
-
-  const payload = {
-    goals: lsGet('goals', []),
-    checks: lsGet('checks', {}),
-    todos: lsGet('todos', []),
-    dua: lsGet('dua', ''),
-    syncedAfter: lastSync,
-    syncedAt: now,
-  };
-
-  await new Promise((r) => setTimeout(r, 800));
-
-  lsSet('last_sync', now);
-  lsSet('agent_log', [
-    { agent: 'sync', action: 'Obsidian sync completed', ts: Date.now() },
-    ...(lsGet('agent_log', []).slice(0, 9)),
-  ]);
-
+  const result = await fullSync();
+  if (!result.push?.ok && !result.pull?.ok) {
+    throw new Error(result.push?.error || result.pull?.error || 'Sync failed');
+  }
   onProgress?.('synced');
-  return payload;
+  return result;
+}
+
+export async function pushNow() {
+  return pushAllToRemote();
 }
 
 export function getLastSyncLabel() {

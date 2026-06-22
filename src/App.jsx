@@ -21,7 +21,8 @@ import BottomSheet from './components/ui/BottomSheet';
 import { useTheme } from './hooks/useTheme';
 import { useEditMode } from './hooks/useEditMode';
 import { useOpenClaw } from './hooks/useOpenClaw';
-import { initStorage, migrateLegacyKeys } from './data/storage';
+import { initStorage, migrateLegacyKeys, lsSetLocal } from './data/storage';
+import { SyncProvider } from './context/SyncContext';
 import { syncToObsidian } from './utils/sync';
 import { migrateGoals } from './data/goals';
 import {
@@ -55,7 +56,7 @@ function initApp() {
   });
   AGENTS_INIT.forEach((id) => {
     if (localStorage.getItem(`los_chat_${id}`) === null) {
-      localStorage.setItem(`los_chat_${id}`, '[]');
+      lsSetLocal(`chat_${id}`, []);
     }
   });
 }
@@ -178,7 +179,9 @@ function AppInner() {
 export default function App() {
   return (
     <ToastProvider>
-      <AppInner />
+      <SyncProvider>
+        <AppInner />
+      </SyncProvider>
     </ToastProvider>
   );
 }

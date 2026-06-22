@@ -111,17 +111,17 @@ const server = http.createServer(async (req, res) => {
     return res.end();
   }
 
-  if (!auth(req)) return send(res, 401, { error: 'Unauthorized' });
-
   try {
     await ensureDirs();
     const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
-    const parts = url.pathname.split('/').filter(Boolean);
 
     if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/health')) {
-      return send(res, 200, { ok: true, dataDir: DATA_DIR });
+      return send(res, 200, { ok: true, dataDir: DATA_DIR, authed: Boolean(TOKEN) });
     }
 
+    if (!auth(req)) return send(res, 401, { error: 'Unauthorized' });
+
+    const parts = url.pathname.split('/').filter(Boolean);
     if (req.method === 'GET' && url.pathname === '/manifest') {
       return send(res, 200, await readManifest());
     }
